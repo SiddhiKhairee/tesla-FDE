@@ -15,18 +15,18 @@ Priority key: **P0** = must-do · **P1** = important · **P2** = stretch, only i
 **Goal:** Docker/Odoo running, both service skeletons scaffolded, API access to Odoo proven.
 
 **Sequential — do first**
-- [ ] Install Docker Desktop (WSL2 backend) and confirm `docker run hello-world` works — **P0**
-- [ ] Create repo structure: `/backend`, `/frontend`, `/data-gen`, `/odoo`, `README.md` — **P0**
-- [ ] Stand up Odoo Community via docker-compose (odoo + postgres) — **P0**
+- [x] Install Docker Desktop (WSL2 backend) and confirm `docker run hello-world` works — **P0**
+- [x] Create repo structure: `/backend`, `/frontend`, `/data-gen`, `/odoo`, `README.md` — **P0**
+- [x] Stand up Odoo Community via docker-compose (odoo + postgres) — **P0**
   - Use the official Odoo docker-compose reference — don't hand-roll the Postgres wiring.
-- [ ] Log into Odoo, enable Inventory, Purchase, Manufacturing, Sales apps — **P0**
+- [x] Log into Odoo, enable Inventory, Purchase, Manufacturing, Sales apps — **P0**
 
 **Parallel — while Odoo is standing up**
-- [ ] Scaffold FastAPI backend (venv, requirements.txt, health-check endpoint) — **P1**
-- [ ] Scaffold React frontend (Vite), confirm it builds and runs — **P1**
+- [x] Scaffold FastAPI backend (venv, requirements.txt, health-check endpoint) — **P1**
+- [x] Scaffold React frontend (Vite), confirm it builds and runs — **P1**
 
 **Sequential — after Odoo is up**
-- [ ] Enable Odoo's external API (XML-RPC or REST) and make one successful authenticated read call from Python — **P0**
+- [x] Enable Odoo's external API (XML-RPC or REST) and make one successful authenticated read call from Python — **P0**
   - This is the riskiest single step in the whole week — don't leave it for later.
 - [ ] Push initial commit, write a one-paragraph README stub — **P1**
 - [ ] Add an empty GitHub Actions workflow file (lint job only, for now) — **P2**
