@@ -28,7 +28,7 @@ Priority key: **P0** = must-do · **P1** = important · **P2** = stretch, only i
 **Sequential — after Odoo is up**
 - [x] Enable Odoo's external API (XML-RPC or REST) and make one successful authenticated read call from Python — **P0**
   - This is the riskiest single step in the whole week — don't leave it for later.
-- [ ] Push initial commit, write a one-paragraph README stub — **P1**
+- [x] Push initial commit, write a one-paragraph README stub — **P1**
 - [ ] Add an empty GitHub Actions workflow file (lint job only, for now) — **P2**
 
 **Depends on:** Nothing — this is day zero. Everything else in the week depends on the Odoo API connection working, so don't leave this day partial.
