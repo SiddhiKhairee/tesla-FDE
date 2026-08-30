@@ -1,0 +1,101 @@
+[
+  {
+    "source": "erp",
+    "entity_id": "P00040",
+    "field": "state",
+    "expected_value": "done",
+    "actual_value": "assigned",
+    "timestamp": "2026-06-02T00:00:00",
+    "anomaly_type": "stuck_order"
+  },
+  {
+    "source": "erp",
+    "entity_id": "P00063",
+    "field": "order_count",
+    "expected_value": 1,
+    "actual_value": 2,
+    "timestamp": "2026-06-24T00:00:00",
+    "anomaly_type": "duplicate_entry"
+  },
+  {
+    "source": "erp",
+    "entity_id": "S00011",
+    "field": "state",
+    "expected_value": "done",
+    "actual_value": "assigned",
+    "timestamp": "2026-07-09T00:00:00",
+    "anomaly_type": "stuck_order"
+  },
+  {
+    "source": "erp",
+    "entity_id": "P00080",
+    "field": "date_done",
+    "expected_value": "2026-07-21T00:00:00",
+    "actual_value": "2026-07-30T00:00:00",
+    "timestamp": "2026-07-21T00:00:00",
+    "anomaly_type": "delayed_delivery"
+  },
+  {
+    "source": "erp",
+    "entity_id": "P00083",
+    "field": "order_count",
+    "expected_value": 1,
+    "actual_value": 2,
+    "timestamp": "2026-07-23T00:00:00",
+    "anomaly_type": "duplicate_entry"
+  },
+  {
+    "source": "erp",
+    "entity_id": "S00018",
+    "field": "state",
+    "expected_value": "done",
+    "actual_value": "assigned",
+    "timestamp": "2026-07-31T00:00:00",
+    "anomaly_type": "stuck_order"
+  },
+  {
+    "source": "erp",
+    "entity_id": "P00096",
+    "field": "order_count",
+    "expected_value": 1,
+    "actual_value": 2,
+    "timestamp": "2026-08-06T00:00:00",
+    "anomaly_type": "duplicate_entry"
+  },
+  {
+    "source": "erp",
+    "entity_id": "P00098",
+    "field": "date_done",
+    "expected_value": "2026-08-06T00:00:00",
+    "actual_value": "2026-08-20T00:00:00",
+    "timestamp": "2026-08-06T00:00:00",
+    "anomaly_type": "delayed_delivery"
+  },
+  {
+    "source": "erp",
+    "entity_id": "S00022",
+    "field": "state",
+    "expected_value": "done",
+    "actual_value": "confirmed",
+    "timestamp": "2026-08-06T00:00:00",
+    "anomaly_type": "stuck_order"
+  },
+  {
+    "source": "erp",
+    "entity_id": "P00103",
+    "field": "state",
+    "expected_value": "done",
+    "actual_value": "assigned",
+    "timestamp": "2026-08-14T00:00:00",
+    "anomaly_type": "stuck_order"
+  },
+  {
+    "source": "erp",
+    "entity_id": "P00107",
+    "field": "order_count",
+    "expected_value": 1,
+    "actual_value": 2,
+    "timestamp": "2026-08-19T00:00:00",
+    "anomaly_type": "duplicate_entry"
+  }
+]
