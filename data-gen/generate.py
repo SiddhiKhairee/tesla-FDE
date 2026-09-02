@@ -21,6 +21,8 @@ import argparse
 import json
 import os
 import random
+from collections import Counter
+from datetime import timedelta
 
 import numpy as np
 import pandas as pd
@@ -33,6 +35,17 @@ from anomalies import (
     inject_quantity_mismatch,
     inject_stuck_order,
 )
+
+# quantity_mismatch candidates: every distinct (product, its natural location)
+# combo available. Capped at this length — beyond it, two anomalies would have
+# to collide on the same quant. See inject_quantity_mismatches().
+QUANTITY_MISMATCH_CANDIDATES = [
+    ("cell", "raw_materials"),
+    ("bms", "raw_materials"),
+    ("enclosure", "raw_materials"),
+    ("bracket", "raw_materials"),
+    ("finished_good", "finished_goods"),
+]
 from odoo_client import OdooClient
 
 fake = Faker()
@@ -120,8 +133,13 @@ def force_move_line_quantities(client: OdooClient, moves: list, picking_id: int 
             client.create("stock.move.line", vals)
 
 
-def validate_picking(client: OdooClient, picking_id: int):
-    """Reserve, then set move-line quantities to full demand and validate the transfer."""
+def validate_picking(client: OdooClient, picking_id: int, effective_date=None):
+    """Reserve, then set move-line quantities to full demand and validate the transfer.
+
+    Odoo's button_validate stamps date_done with the real current server
+    time regardless of scheduled_date, so if effective_date is given we
+    backdate it afterward to stay inside the simulated historical window.
+    """
     client.call_button("stock.picking", "action_assign", [picking_id])
 
     moves = client.search_read(
@@ -133,6 +151,9 @@ def validate_picking(client: OdooClient, picking_id: int):
 
     result = client.call_button("stock.picking", "button_validate", [picking_id])
     confirm_wizard_if_returned(client, result, confirm_method="process")
+
+    if effective_date is not None:
+        client.write("stock.picking", [picking_id], {"date_done": effective_date.strftime("%Y-%m-%d %H:%M:%S")})
 
 
 def create_purchase_order(client, entities, product_key, qty, order_date):
@@ -156,6 +177,9 @@ def create_purchase_order(client, entities, product_key, qty, order_date):
         },
     )
     client.call_button("purchase.order", "button_confirm", [po_id])
+    # button_confirm stamps date_approve (Confirmation Date) with the real
+    # current server time — backdate it to the simulated order date.
+    client.write("purchase.order", [po_id], {"date_approve": order_date.strftime("%Y-%m-%d %H:%M:%S")})
     po = client.search_read("purchase.order", [["id", "=", po_id]], ["name"])[0]
 
     pickings = client.search_read(
@@ -196,7 +220,7 @@ def create_manufacturing_order(client, entities, qty, order_date):
     return mo_id, mo["name"]
 
 
-def complete_manufacturing_order(client, mo_id, qty):
+def complete_manufacturing_order(client, mo_id, qty, effective_date):
     """Reserve components, verify every one is actually available in full,
     and only then force the move quantities and mark the MO done.
 
@@ -243,6 +267,10 @@ def complete_manufacturing_order(client, mo_id, qty):
     if final_state != "done":
         raise RuntimeError(f"MO did not reach 'done' state after button_mark_done (got '{final_state}')")
 
+    # button_mark_done stamps date_finished with the real current server
+    # time — backdate it to stay inside the simulated historical window.
+    client.write("mrp.production", [mo_id], {"date_finished": effective_date.strftime("%Y-%m-%d %H:%M:%S")})
+
 
 def create_sales_order(client, entities, customer_name, qty, order_date):
     customer_id = client.get_or_create_customer_id(customer_name)
@@ -264,6 +292,9 @@ def create_sales_order(client, entities, customer_name, qty, order_date):
         },
     )
     client.call_button("sale.order", "action_confirm", [so_id])
+    # action_confirm overwrites date_order with the real current server time
+    # even though we set it explicitly on create — force it back.
+    client.write("sale.order", [so_id], {"date_order": order_date.strftime("%Y-%m-%d %H:%M:%S")})
     so = client.search_read("sale.order", [["id", "=", so_id]], ["name"])[0]
 
     pickings = client.search_read(
@@ -271,8 +302,18 @@ def create_sales_order(client, entities, customer_name, qty, order_date):
         [["origin", "=", so["name"]], ["picking_type_id.code", "=", "outgoing"]],
         ["id"],
     )
+    # Unlike a PO's receipt (whose scheduled_date inherits date_planned from
+    # the order line we set at create), a delivery picking's scheduled_date
+    # defaults to real "now" — backdate it here for parity with POs.
     for p in pickings:
-        client.write("stock.picking", [p["id"]], {"location_id": entities["locations"]["finished_goods"]})
+        client.write(
+            "stock.picking",
+            [p["id"]],
+            {
+                "location_id": entities["locations"]["finished_goods"],
+                "scheduled_date": order_date.strftime("%Y-%m-%d %H:%M:%S"),
+            },
+        )
 
     return so_id, so["name"], [p["id"] for p in pickings]
 
@@ -310,12 +351,15 @@ def run(client, entities, schedule: pd.DataFrame, limit: int | None, dry_run: bo
                             inject_stuck_order(client, "stock.picking", pickings[0], po_name, "done", order_date)
                         )
                     elif anomaly_type == "delayed":
-                        validate_picking(client, pickings[0])
+                        # date_done gets fully overwritten by inject_delayed_delivery
+                        # below, so the exact effective_date here doesn't matter.
+                        validate_picking(client, pickings[0], effective_date=order_date)
                         ground_truth.append(
                             inject_delayed_delivery(client, pickings[0], po_name, order_date, order_date)
                         )
                     else:  # duplicate
-                        validate_picking(client, pickings[0])
+                        receipt_date = order_date + timedelta(days=random.randint(1, 4))
+                        validate_picking(client, pickings[0], effective_date=receipt_date)
                         supplier_key = config.PRODUCT_SUPPLIER[product_key]
                         dup_vals = {
                             "partner_id": entities["suppliers"][supplier_key],
@@ -331,7 +375,9 @@ def run(client, entities, schedule: pd.DataFrame, limit: int | None, dry_run: bo
                         _, event = inject_duplicate_entry(client, "purchase.order", dup_vals, po_name, order_date)
                         ground_truth.append(event)
                 else:
-                    validate_picking(client, pickings[0]) if pickings else None
+                    if pickings:
+                        receipt_date = order_date + timedelta(days=random.randint(1, 4))
+                        validate_picking(client, pickings[0], effective_date=receipt_date)
 
                 created_count += 1
             except Exception as e:  # noqa: BLE001 — log and keep going, first live run will surface real issues
@@ -342,30 +388,17 @@ def run(client, entities, schedule: pd.DataFrame, limit: int | None, dry_run: bo
             if limit is not None and created_count >= limit:
                 break
             qty = random.randint(1, 10)
-            anomalous = random.random() < config.ANOMALY_RATE
 
             if dry_run:
-                print(f"[dry-run] MO: PW3-ASSY x{qty} on {order_date.date()} anomaly={anomalous}")
+                print(f"[dry-run] MO: PW3-ASSY x{qty} on {order_date.date()}")
                 created_count += 1
                 continue
 
             mo_id = None
             try:
                 mo_id, mo_name = create_manufacturing_order(client, entities, qty, order_date)
-                complete_manufacturing_order(client, mo_id, qty)
-
-                if anomalous:
-                    event = inject_quantity_mismatch(
-                        client,
-                        entities["products"]["finished_good"],
-                        entities["locations"]["finished_goods"],
-                        mo_name,
-                        qty,
-                        order_date,
-                    )
-                    if event:
-                        ground_truth.append(event)
-
+                finish_date = order_date + timedelta(days=random.randint(0, 1))
+                complete_manufacturing_order(client, mo_id, qty, finish_date)
                 created_count += 1
             except InsufficientComponentsError as e:
                 # Real shortage, not a bug — don't fake completion. Cancel the
@@ -415,7 +448,8 @@ def run(client, entities, schedule: pd.DataFrame, limit: int | None, dry_run: bo
                     )
                 else:
                     if pickings:
-                        validate_picking(client, pickings[0])
+                        ship_date = order_date + timedelta(days=random.randint(0, 2))
+                        validate_picking(client, pickings[0], effective_date=ship_date)
 
                 created_count += 1
             except Exception as e:  # noqa: BLE001
@@ -423,6 +457,39 @@ def run(client, entities, schedule: pd.DataFrame, limit: int | None, dry_run: bo
                 failed_count += 1
 
     return ground_truth, created_count, failed_count, skipped_count
+
+
+def inject_quantity_mismatches(client, entities, end_date, count):
+    """Inject quantity_mismatch anomalies as a separate pass at the very end
+    of the simulated window, after every other order has already been
+    created — so nothing legitimate touches these quants afterward within
+    this run, and a diagnosis agent querying Odoo's *current* state will
+    still find the corrupted value.
+
+    Each anomaly targets a distinct product/location combo (see
+    QUANTITY_MISMATCH_CANDIDATES) so multiple anomalies never collide on the
+    same quant. count is capped at the number of distinct combos available.
+    """
+    if count > len(QUANTITY_MISMATCH_CANDIDATES):
+        print(f"[WARN] quantity_mismatch count {count} exceeds {len(QUANTITY_MISMATCH_CANDIDATES)} "
+              f"distinct product/location combos available — capping to avoid collisions.")
+        count = len(QUANTITY_MISMATCH_CANDIDATES)
+
+    chosen = random.sample(QUANTITY_MISMATCH_CANDIDATES, count)
+    events = []
+    for product_key, location_key in chosen:
+        event = inject_quantity_mismatch(
+            client,
+            entities["products"][product_key],
+            entities["locations"][location_key],
+            config.PRODUCT_SKUS[product_key],
+            config.LOCATION_NAMES[location_key],
+            end_date,
+        )
+        events.append(event)
+        print(f"  quantity_mismatch: {event.product}@{event.location} "
+              f"{event.qty_before_injection} -> {event.qty_after_injection}")
+    return events
 
 
 def main():
@@ -450,8 +517,20 @@ def main():
 
     ground_truth, created, failed, skipped = run(client, entities, schedule, args.limit, args.dry_run)
 
+    if not args.dry_run:
+        end_date = schedule["date"].max().to_pydatetime()
+        print(f"\nInjecting {config.QUANTITY_MISMATCH_COUNT} quantity_mismatch anomalies "
+              f"at end of window ({end_date.date()})...")
+        ground_truth.extend(
+            inject_quantity_mismatches(client, entities, end_date, config.QUANTITY_MISMATCH_COUNT)
+        )
+
     print(f"\nDone. Created: {created}, Failed: {failed}, Skipped (dependency not met): {skipped}, "
           f"Anomalies logged: {len(ground_truth)}")
+    if ground_truth:
+        counts = Counter(e.anomaly_type for e in ground_truth)
+        for anomaly_type, count in sorted(counts.items()):
+            print(f"  {anomaly_type}: {count}")
 
     if not args.dry_run and ground_truth:
         os.makedirs(os.path.dirname(config.GROUND_TRUTH_PATH), exist_ok=True)

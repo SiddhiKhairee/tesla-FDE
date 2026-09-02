@@ -6,6 +6,9 @@ of generate.py so each run starts from a clean slate.
 
     python reset_data.py
 """
+import os
+
+import config
 from generate import confirm_wizard_if_returned
 from odoo_client import OdooClient
 
@@ -71,6 +74,15 @@ def main():
 
     print("Zeroing out on-hand quantities for tracked products...")
     zero_out_quants(client, entities)
+
+    # A record this reset couldn't delete (e.g. a duplicate-anomaly PO left in
+    # draft, deleted here, while its confirmed "original" survives because
+    # Odoo won't delete a completed reception) makes any existing
+    # ground_truth.json describe a state that no longer fully exists.
+    # Remove it rather than leave a file that looks valid but silently isn't.
+    if os.path.exists(config.GROUND_TRUTH_PATH):
+        os.remove(config.GROUND_TRUTH_PATH)
+        print(f"Removed {config.GROUND_TRUTH_PATH} — it described pre-reset state and is no longer valid.")
 
     print("\nDone. Any records that couldn't be deleted (e.g. already 'done') were left in place "
           "and printed above as warnings — those are historical/immutable in Odoo, but on-hand "

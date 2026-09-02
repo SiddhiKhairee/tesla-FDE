@@ -71,5 +71,11 @@ SIMULATION_MONTHS = 3  # how far back the generated history stretches, ending "t
 ANOMALY_RATE = 0.08  # fraction of generated orders that get an anomaly injected
 RANDOM_SEED = 42  # fixed seed so a run is reproducible; change for a fresh dataset
 
+# quantity_mismatch anomalies are injected as a separate pass at the very end
+# of the simulated window (see generate.py's inject_quantity_mismatches), one
+# per distinct product/location so they don't collide on the same quant.
+# Capped at 5 — the number of distinct product/location combos available.
+QUANTITY_MISMATCH_COUNT = 4
+
 # --- Output paths ---
 GROUND_TRUTH_PATH = "output/ground_truth.json"
