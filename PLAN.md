@@ -40,14 +40,14 @@ Priority key: **P0** = must-do · **P1** = important · **P2** = stretch, only i
 **Goal:** Core entities defined in Odoo; a generator script produces realistic order/inventory history with labeled anomalies.
 
 **Parallel — independent tracks**
-- [ ] Manually create the base entity set in Odoo UI: 4–6 products (raw + finished), 2 warehouses, 2–3 suppliers, one simple BOM — **P0**
-- [ ] Build the Python data-generator (Faker + numpy): purchase orders, work orders, sales orders, stock moves over a simulated 2–3 month window — **P0**
+- [x] Manually create the base entity set in Odoo UI: 4–6 products (raw + finished), 1 warehouse, 2–3 suppliers, one simple BOM — **P0**
+- [x] Build the Python data-generator (Faker + numpy): purchase orders, work orders, sales orders, stock moves over a simulated 2–3 month window — **P0**
 
 **Sequential — needs both tracks above**
-- [ ] Design the anomaly-injection logic (stuck orders, quantity mismatches, duplicate entries) and a ground-truth log of what was injected — **P0**
-- [ ] Push generated records into Odoo through the API proven on Day 1 — **P0**
-- [ ] Spot-check in the Odoo UI that orders/stock look right — **P0**
-- [ ] Run the anomaly injection pass, confirm the ground-truth file matches what landed in Odoo — **P0**
+- [x] Design the anomaly-injection logic (stuck orders, quantity mismatches, duplicate entries, delayed deliveries) and a ground-truth log of what was injected — **P0**
+- [x] Push generated records into Odoo through the API proven on Day 1 — **P0**
+- [x] Spot-check in the Odoo UI that orders/stock look right — **P0**
+- [x] Run the anomaly injection pass, confirm the ground-truth file matches what landed in Odoo — **P0**
 
 **Depends on:** the Odoo API connection from Day 1. If that's shaky, fix it before writing the generator.
 
