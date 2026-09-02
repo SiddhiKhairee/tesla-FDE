@@ -58,8 +58,8 @@ Priority key: **P0** = must-do · **P1** = important · **P2** = stretch, only i
 **Goal:** A backend service that pulls Odoo data, detects discrepancies, and reasons about likely cause.
 
 **Parallel — independent tracks**
-- [ ] Build the Odoo data-fetch layer in FastAPI (orders, stock levels, work orders) — **P0**
-- [ ] Define the shared event schema — `{source, entity_id, field, expected, actual, timestamp}` — used by both the ERP and failure-report paths — **P0**
+- [x] Build the Odoo data-fetch layer in FastAPI (orders, stock levels, work orders) — **P0**
+- [x] Define the shared event schema — `{source, entity_id, field, expected, actual, timestamp}` — used by both the ERP and failure-report paths — **P0**
 
 **Sequential**
 - [ ] Build rule-based detection logic on top of the fetch layer (mismatch checks, stuck-order checks, quantity drift) — **P0**
