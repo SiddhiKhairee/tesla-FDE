@@ -82,14 +82,14 @@ Priority key: **P0** = must-do · **P1** = important · **P2** = stretch, only i
 **Goal:** The human-reported path (Version B) works end to end and fires real notifications.
 
 **Parallel — independent tracks**
-- [ ] Build the failure-report intake endpoint (machine, issue, timestamp, notes) — **P0**
-- [ ] Build a small historical-incident store + similarity/pattern-match logic — **P0**
+- [x] Build the failure-report intake endpoint (machine, issue, timestamp, notes) — **P0**
+- [x] Build a small historical-incident store + similarity/pattern-match logic — **P0**
 
 **Sequential**
-- [ ] Wire the intake endpoint into the same diagnosis engine from Day 3, using the shared event schema — **P0**
-- [ ] Build the Slack or Teams webhook integration for auto-notification — **P0**
-- [ ] Connect report/ticket generation → notification trigger — **P0**
-- [ ] Write a handful of tests covering both pipelines (ERP path + report path) — **P1**
+- [x] Wire the intake endpoint into the same diagnosis engine from Day 3, using the shared event schema — **P0**
+- [x] Build the Slack or Teams webhook integration for auto-notification — **P0**
+- [x] Connect report/ticket generation → notification trigger — **P0**
+- [x] Write a handful of tests covering both pipelines (ERP path + report path) — **P1**
 
 **Stretch — only if ahead of schedule**
 - [ ] Stub the Version-A adapter: feed the AI4I sensor dataset through the same shared event schema, diagnosis-agent structure, and notification path as Version B. Note: the diagnose node and report schema reuse directly, but gather_context needs a second, sensor-specific implementation (computing things like std-deviations-off-baseline and cross-sensor drift, instead of ERP concepts like days-overdue or product/location match counts) — not a full rewrite of the agent, just a parallel context-computation function feeding the same diagnose node. — **P2**

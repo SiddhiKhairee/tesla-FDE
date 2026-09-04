@@ -31,6 +31,7 @@ class DiagnosisState(TypedDict):
     all_events: list[DiscrepancyEvent]
     reference_date: datetime
     order_index: dict[str, dict]
+    historical_matches: list[dict]
     context: dict[str, Any]
     report: DiagnosisReport | None
 
@@ -44,6 +45,7 @@ def _gather_context(
     all_events: list[DiscrepancyEvent],
     reference_date: datetime,
     order_index: dict[str, dict] | None = None,
+    historical_matches: list[dict] | None = None,
 ) -> dict[str, Any]:
     order_index = order_index or {}
     siblings = [e for e in all_events if e is not event]
@@ -129,12 +131,33 @@ def _gather_context(
     elif event.anomaly_type == "duplicate_entry":
         context["duplicate_of"] = event.duplicate_of
 
+    if historical_matches:
+        # Version B (human_report) signal: past incidents on this machine
+        # (or with similar reported symptoms), ranked by historical_incidents
+        # .find_similar_incidents — an ERP-side siblings count doesn't exist
+        # for a one-off floor report, so this is the primary "have we seen
+        # this before" evidence for equipment_failure events.
+        context["similar_past_incidents"] = [
+            {
+                "machine": m["machine"],
+                "issue": m["issue"],
+                "resolution": m["resolution"],
+                "match_score": m["match_score"],
+                "same_machine": m["same_machine"],
+            }
+            for m in historical_matches
+        ]
+
     return context
 
 
 def _gather_context_node(state: DiagnosisState) -> dict[str, Any]:
     context = _gather_context(
-        state["event"], state["all_events"], state["reference_date"], state["order_index"]
+        state["event"],
+        state["all_events"],
+        state["reference_date"],
+        state["order_index"],
+        state["historical_matches"],
     )
     return {"context": context}
 
@@ -163,6 +186,7 @@ def diagnose_event(
     all_events: list[DiscrepancyEvent] | None = None,
     reference_date: datetime | None = None,
     order_index: dict[str, dict] | None = None,
+    historical_matches: list[dict] | None = None,
 ) -> dict[str, Any]:
     """Run one DiscrepancyEvent through the diagnosis graph. `all_events`
     should be the full batch it was detected alongside (defaults to just
@@ -170,10 +194,13 @@ def diagnose_event(
     compare against. `order_index` (see order_lookup.build_order_index)
     supplies vendor/product/order-value detail for order-based anomalies —
     omit it to fall back to the generic, order-detail-free context.
+    `historical_matches` (see historical_incidents.find_similar_incidents)
+    supplies past-incident matches for human-reported events.
     """
     all_events = all_events if all_events is not None else [event]
     reference_date = reference_date or datetime.now()
     order_index = order_index or {}
+    historical_matches = historical_matches or []
 
     result = _DIAGNOSIS_GRAPH.invoke(
         {
@@ -181,6 +208,7 @@ def diagnose_event(
             "all_events": all_events,
             "reference_date": reference_date,
             "order_index": order_index,
+            "historical_matches": historical_matches,
             "context": {},
             "report": None,
         }

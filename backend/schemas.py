@@ -22,3 +22,16 @@ class DiscrepancyEvent(BaseModel):
     product: str | None = None
     location: str | None = None
     duplicate_of: str | None = None
+
+
+class FailureReportIn(BaseModel):
+    """Version B intake: a human on the floor reporting a problem directly,
+    the replacement for typing it into Slack/Teams by hand (per Astin,
+    there are no sensors — this is the only detection path that exists
+    today). See human_report.py for the adapter into DiscrepancyEvent.
+    """
+
+    machine: str
+    issue: str
+    timestamp: str
+    notes: str | None = None

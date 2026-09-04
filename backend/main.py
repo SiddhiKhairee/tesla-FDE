@@ -9,6 +9,9 @@ from detection import (
     detect_stuck_orders,
 )
 from diagnosis import diagnose_all, diagnose_event
+from historical_incidents import find_similar_incidents, load_incidents
+from human_report import report_to_event
+from notifications import notify_ticket
 from odoo_client import OdooClient
 from odoo_fetch import (
     fetch_incoming_receipts,
@@ -24,10 +27,12 @@ from odoo_fetch import (
     fetch_stock_quants,
 )
 from order_lookup import build_order_index
+from schemas import FailureReportIn
 
 app = FastAPI(title="Tesla FDE ERP Reconciliation Agent")
 
 odoo = OdooClient()
+_HISTORICAL_INCIDENTS = load_incidents()
 
 
 @app.get("/health")
@@ -142,3 +147,19 @@ def run_pipeline():
     snapshot = _fetch_snapshot()
     events = _detect_all_events(snapshot)
     return diagnose_all(events, order_index=_build_order_index(snapshot))
+
+
+@app.post("/reports/intake")
+def submit_failure_report(report: FailureReportIn):
+    """Version B: a human on the floor reports a problem directly. Adapts
+    the report into the shared DiscrepancyEvent schema, matches it against
+    historical_incidents.py's past-incident store, runs it through the same
+    diagnosis engine Day 3 built for ERP anomalies, and auto-notifies the
+    team — replacing the "someone has to type it into Slack" step Astin
+    confirmed is today's actual process.
+    """
+    event = report_to_event(report)
+    matches = find_similar_incidents(report.machine, report.issue, _HISTORICAL_INCIDENTS)
+    diagnosis = diagnose_event(event, historical_matches=matches)
+    notified = notify_ticket(diagnosis)
+    return {**diagnosis, "notified": notified}

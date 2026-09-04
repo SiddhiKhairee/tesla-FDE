@@ -12,11 +12,14 @@ Providers differ in how they request structured output (Anthropic's
 exactly the kind of divergence this interface exists to absorb.
 """
 import json
+import logging
 import os
 from abc import ABC, abstractmethod
 from typing import Literal
 
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """You are a reconciliation assistant for a manufacturing \
 ERP system (purchase orders, receipts, deliveries, stock on hand). You are \
@@ -38,6 +41,12 @@ class DiagnosisReport(BaseModel):
     reasoning: str
     confidence: Literal["low", "medium", "high"]
     recommended_action: str
+    # Not part of what any provider is asked to produce (kept optional so it
+    # never becomes a required field in a provider's structured-output
+    # schema) — always set host-side, after generation, by whichever
+    # DiagnosisLLM actually produced the report. Lets a caller tell real
+    # model reasoning apart from the deterministic stub without reading logs.
+    llm_used: Literal["gemini", "anthropic", "stub"] | None = None
 
 
 class DiagnosisLLM(ABC):
@@ -65,7 +74,9 @@ class AnthropicDiagnosisLLM(DiagnosisLLM):
             ],
             output_format=DiagnosisReport,
         )
-        return response.parsed_output
+        report = response.parsed_output
+        report.llm_used = "anthropic"
+        return report
 
 
 class GeminiDiagnosisLLM(DiagnosisLLM):
@@ -95,7 +106,9 @@ class GeminiDiagnosisLLM(DiagnosisLLM):
         # (a convenience field whose availability has shifted across SDK
         # versions) — response_mime_type + response_schema already guarantee
         # response.text is JSON matching DiagnosisReport's shape.
-        return DiagnosisReport.model_validate_json(response.text)
+        report = DiagnosisReport.model_validate_json(response.text)
+        report.llm_used = "gemini"
+        return report
 
 
 class StubDiagnosisLLM(DiagnosisLLM):
@@ -128,6 +141,37 @@ class StubDiagnosisLLM(DiagnosisLLM):
                 f"{event.get('duplicate_of')} — same partner, product, and quantity within days."
             )
             action = "Confirm with the requester whether both orders are intentional; cancel the duplicate if not."
+        elif anomaly_type == "equipment_failure":
+            similar = context.get("similar_past_incidents") or []
+            cause = f"{event['entity_id']} reported as: {event.get('actual_value')}."
+            if similar:
+                top = similar[0]
+                if top["same_machine"]:
+                    cause += (
+                        f" This machine had a similar issue before ('{top['issue']}'), "
+                        f"resolved by: {top['resolution']}"
+                    )
+                else:
+                    cause += (
+                        f" A similar issue occurred on {top['machine']} before ('{top['issue']}'), "
+                        f"resolved by: {top['resolution']}"
+                    )
+                action = f"Try the same fix that resolved the closest past incident ({top['machine']}); escalate if it doesn't apply."
+                confidence = "medium" if top["match_score"] >= 0.7 else "low"
+            else:
+                action = "No similar past incident found — escalate to the equipment owner for manual diagnosis."
+                confidence = "low"
+
+            return DiagnosisReport(
+                likely_cause=cause,
+                reasoning=(
+                    "[STUB — no LLM call made] Generated directly from computed context "
+                    "fields as a placeholder until a provider is configured."
+                ),
+                confidence=confidence,
+                recommended_action=action,
+                llm_used="stub",
+            )
         elif anomaly_type == "quantity_mismatch":
             direction = context.get("drift_direction", "a mismatch")
             pct = context.get("drift_pct_of_expected")
@@ -155,16 +199,52 @@ class StubDiagnosisLLM(DiagnosisLLM):
             ),
             confidence=confidence,
             recommended_action=action,
+            llm_used="stub",
         )
 
 
+class GeminiWithStubFallbackLLM(DiagnosisLLM):
+    """Wraps GeminiDiagnosisLLM with a narrow, automatic fallback to
+    StubDiagnosisLLM — but only when Gemini fails with 429
+    RESOURCE_EXHAUSTED (the free-tier quota/rate limit). That's an expected,
+    temporary condition on the free tier, not a bug, so it shouldn't 500 the
+    request — a diagnosis (even the deterministic stub one) is more useful
+    to the caller than an error.
+
+    Any other Gemini failure (bad API key, network error, malformed
+    request, a non-429 API error) is re-raised as-is — those are real bugs
+    that should surface, not get silently swallowed by the fallback.
+    """
+
+    def __init__(self):
+        self._gemini = GeminiDiagnosisLLM()
+        self._stub = StubDiagnosisLLM()
+
+    def generate(self, event: dict, context: dict) -> DiagnosisReport:
+        from google.genai import errors
+
+        try:
+            return self._gemini.generate(event, context)
+        except errors.ClientError as e:
+            if e.code == 429 and e.status == "RESOURCE_EXHAUSTED":
+                logger.warning(
+                    "Gemini quota exhausted (429 RESOURCE_EXHAUSTED) for event %s — "
+                    "falling back to StubDiagnosisLLM for this request: %s",
+                    event.get("entity_id"),
+                    e,
+                )
+                return self._stub.generate(event, context)
+            raise
+
+
 def get_diagnosis_llm() -> DiagnosisLLM:
-    """Gemini first (the chosen free-tier provider), then Anthropic if
-    somehow configured instead, otherwise the free stub. This is the one
-    place that needs to change when the provider changes again.
+    """Gemini first (the chosen free-tier provider, wrapped with a
+    quota-only stub fallback — see GeminiWithStubFallbackLLM), then
+    Anthropic if somehow configured instead, otherwise the free stub. This
+    is the one place that needs to change when the provider changes again.
     """
     if os.environ.get("GEMINI_API_KEY"):
-        return GeminiDiagnosisLLM()
+        return GeminiWithStubFallbackLLM()
     if os.environ.get("ANTHROPIC_API_KEY"):
         return AnthropicDiagnosisLLM()
     return StubDiagnosisLLM()

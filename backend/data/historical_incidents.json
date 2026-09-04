@@ -1,0 +1,122 @@
+[
+  {
+    "id": "INC-001",
+    "machine": "Cell Winder 3",
+    "issue": "Winder jammed mid-cycle, tension arm not resetting",
+    "notes": "Operator heard a grinding noise before the stop.",
+    "resolution": "Tension arm spring had worn out; replaced spring and recalibrated tension sensor arm.",
+    "reported_at": "2026-04-02T09:15:00"
+  },
+  {
+    "id": "INC-002",
+    "machine": "Cell Winder 3",
+    "issue": "Winder stopped mid-cycle with a jam, tension arm stuck",
+    "notes": "Same symptoms as last month.",
+    "resolution": "Tension arm spring replaced again — flagged for a shorter PM interval.",
+    "reported_at": "2026-05-10T14:30:00"
+  },
+  {
+    "id": "INC-003",
+    "machine": "Busbar Welder A",
+    "issue": "Weld quality inconsistent, several welds visibly cold",
+    "notes": "Started after the last electrode swap.",
+    "resolution": "Electrode alignment was off by ~2mm after the swap; realigned and re-ran calibration weld set.",
+    "reported_at": "2026-04-18T11:00:00"
+  },
+  {
+    "id": "INC-004",
+    "machine": "Powerwall Assembly Line 2",
+    "issue": "Line stopped, conveyor not advancing past station 4",
+    "notes": "No error light on the HMI.",
+    "resolution": "Photoeye at station 4 was misaligned by vibration; cleaned and re-mounted the sensor bracket.",
+    "reported_at": "2026-03-22T08:45:00"
+  },
+  {
+    "id": "INC-005",
+    "machine": "Electrolyte Fill Station 1",
+    "issue": "Fill volume reading low on several cells in a row",
+    "notes": "Checked visually, fluid level in the reservoir looked normal.",
+    "resolution": "Fill nozzle had a partial clog reducing flow rate; nozzle cleaned and flow-tested.",
+    "reported_at": "2026-04-29T13:20:00"
+  },
+  {
+    "id": "INC-006",
+    "machine": "Formation Cycler Rack 4",
+    "issue": "Rack 4 showing higher-than-normal temperature during formation cycle",
+    "notes": "Other racks running normal temps at the same time.",
+    "resolution": "Cooling fan on rack 4 had failed; fan replaced.",
+    "reported_at": "2026-05-02T16:10:00"
+  },
+  {
+    "id": "INC-007",
+    "machine": "Laser Welder B2",
+    "issue": "Intermittent weld skips, laser not firing every cycle",
+    "notes": "Happens roughly every 20-30 cycles, not consistent.",
+    "resolution": "Loose fiber optic connector at the laser head; reseated and secured connector.",
+    "reported_at": "2026-05-15T10:05:00"
+  },
+  {
+    "id": "INC-008",
+    "machine": "Vacuum Sealer 1",
+    "issue": "Seal integrity failing on random packs, air leaking back in",
+    "notes": "Failure rate estimated around 1 in 15 packs today.",
+    "resolution": "Seal bar heating element had a cold spot from uneven wear; replaced heating element.",
+    "reported_at": "2026-04-11T15:40:00"
+  },
+  {
+    "id": "INC-009",
+    "machine": "Battery Pack Torque Station",
+    "issue": "Torque values reading inconsistent, some bolts under-torqued",
+    "notes": "Station was recalibrated two weeks ago.",
+    "resolution": "Torque wrench transducer drifted out of calibration; recalibrated and shortened calibration interval.",
+    "reported_at": "2026-03-30T09:50:00"
+  },
+  {
+    "id": "INC-010",
+    "machine": "Powerwall Assembly Line 2",
+    "issue": "Conveyor stalled again near station 4, no fault code",
+    "notes": "Third time this quarter near the same station.",
+    "resolution": "Photoeye bracket vibration issue recurring; added a vibration-dampening mount as a longer-term fix.",
+    "reported_at": "2026-05-20T07:55:00"
+  },
+  {
+    "id": "INC-011",
+    "machine": "Cell Winder 1",
+    "issue": "Unusual noise from the winder motor, no stoppage yet",
+    "notes": "Sounds like a bearing, operator flagged it early.",
+    "resolution": "Motor bearing was worn; replaced during scheduled downtime before failure.",
+    "reported_at": "2026-04-25T12:00:00"
+  },
+  {
+    "id": "INC-012",
+    "machine": "Busbar Welder A",
+    "issue": "Cold welds appearing again, quality flagged by inline inspection",
+    "notes": "Electrode was swapped two days ago.",
+    "resolution": "Alignment jig itself was slightly bent from the earlier incident; jig replaced.",
+    "reported_at": "2026-05-01T09:30:00"
+  },
+  {
+    "id": "INC-013",
+    "machine": "Formation Cycler Rack 2",
+    "issue": "Rack tripped on overcurrent partway through cycle",
+    "notes": "First time seeing this on rack 2.",
+    "resolution": "One channel's current sensor had a wiring fault; rewired connection and retested.",
+    "reported_at": "2026-05-08T18:20:00"
+  },
+  {
+    "id": "INC-014",
+    "machine": "Electrolyte Fill Station 1",
+    "issue": "Fill station leaking small amount of fluid at the nozzle base",
+    "notes": "Small puddle noticed at shift change.",
+    "resolution": "Nozzle seal O-ring had degraded; replaced O-ring and cleaned surrounding assembly.",
+    "reported_at": "2026-05-18T06:40:00"
+  },
+  {
+    "id": "INC-015",
+    "machine": "Vacuum Sealer 2",
+    "issue": "Sealer running noticeably slower cycle time than spec",
+    "notes": "No visible fault, just slower throughput.",
+    "resolution": "Vacuum pump filter was clogged, reducing draw speed; filter replaced.",
+    "reported_at": "2026-04-06T14:15:00"
+  }
+]
