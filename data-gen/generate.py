@@ -533,9 +533,20 @@ def main():
             print(f"  {anomaly_type}: {count}")
 
     if not args.dry_run and ground_truth:
+        # generated_through anchors "is this overdue" checks (e.g. stuck_order)
+        # to the end of the simulated window rather than real wall-clock time,
+        # so eval precision/recall stays reproducible run over run.
+        end_date = schedule["date"].max().to_pydatetime()
         os.makedirs(os.path.dirname(config.GROUND_TRUTH_PATH), exist_ok=True)
         with open(config.GROUND_TRUTH_PATH, "w") as f:
-            json.dump([e.to_dict() for e in ground_truth], f, indent=2)
+            json.dump(
+                {
+                    "generated_through": end_date.isoformat(),
+                    "events": [e.to_dict() for e in ground_truth],
+                },
+                f,
+                indent=2,
+            )
         print(f"Ground truth written to {config.GROUND_TRUTH_PATH}")
 
 

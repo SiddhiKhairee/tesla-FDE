@@ -29,7 +29,7 @@ def referenced_pos(ground_truth):
     duplicate pair) — skip these so we don't stack a second anomaly type on
     top of one already verified."""
     refs = set()
-    for e in ground_truth:
+    for e in ground_truth["events"]:
         refs.add(e["entity_id"])
         if e.get("duplicate_of"):
             refs.add(e["duplicate_of"])
@@ -64,7 +64,7 @@ def main():
 
     ground_truth = load_ground_truth()
     exclude = referenced_pos(ground_truth)
-    print(f"{len(ground_truth)} existing ground-truth events, {len(exclude)} POs already referenced.")
+    print(f"{len(ground_truth['events'])} existing ground-truth events, {len(exclude)} POs already referenced.")
 
     client = OdooClient()
     candidates = find_candidates(client, exclude, args.count)
@@ -80,11 +80,11 @@ def main():
         print(f"  Applied delayed_delivery to {c['origin']}: "
               f"expected={event.expected_value} actual={event.actual_value}")
 
-    ground_truth.extend(e.to_dict() for e in new_events)
+    ground_truth["events"].extend(e.to_dict() for e in new_events)
     with open(config.GROUND_TRUTH_PATH, "w") as f:
         json.dump(ground_truth, f, indent=2)
 
-    print(f"\nDone. Ground truth now has {len(ground_truth)} events "
+    print(f"\nDone. Ground truth now has {len(ground_truth['events'])} events "
           f"({len(new_events)} new delayed_delivery appended).")
 
 

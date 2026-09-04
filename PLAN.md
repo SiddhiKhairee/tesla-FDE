@@ -64,9 +64,10 @@ Priority key: **P0** = must-do · **P1** = important · **P2** = stretch, only i
 **Sequential**
 - [x] Build rule-based detection logic on top of the fetch layer (mismatch checks, stuck-order checks, quantity drift) — **P0**
 - [x] Build the LangGraph diagnosis agent: takes a raised event, reasons about likely cause, drafts a structured report — **P0**
-- [ ] Wire detection → event schema → agent, end to end — **P0**
+- [x] Wire detection → event schema → agent, end to end — **P0**
 - [x] Write the eval script: compare detected anomalies against Day 2's ground truth, compute precision/recall — **P0**
   - This number is your strongest defensible claim in the pitch — don't skip it.
+- [ ] Blocked on Gemini free-tier quota reset — rerun the full 12-anomaly batch live (enriched gather_context: vendor/product clustering, temperature=0) and spot-check the stuck_order diagnoses for real, since the last live batch failed entirely on 429s before quota reset — **P0**
 
 **Parallel — polish, lower priority**
 - [ ] Add basic auth (API key or JWT) on the endpoints — **P1**
