@@ -46,7 +46,25 @@ class DiagnosisReport(BaseModel):
     # schema) — always set host-side, after generation, by whichever
     # DiagnosisLLM actually produced the report. Lets a caller tell real
     # model reasoning apart from the deterministic stub without reading logs.
-    llm_used: Literal["gemini", "anthropic", "stub"] | None = None
+    llm_used: Literal["gemini", "groq", "anthropic", "stub"] | None = None
+
+
+class _DiagnosisReportFields(BaseModel):
+    """Same four fields as DiagnosisReport, minus `llm_used`, all required.
+    Groq's strict structured-output mode requires every schema property to
+    be required (and disallows additionalProperties) — DiagnosisReport
+    itself can't be used as-is because `llm_used` is optional. Groq
+    responses are parsed against this narrower schema, then used to build
+    a full DiagnosisReport with `llm_used` set host-side, same as every
+    other provider.
+    """
+
+    model_config = {"extra": "forbid"}
+
+    likely_cause: str
+    reasoning: str
+    confidence: Literal["low", "medium", "high"]
+    recommended_action: str
 
 
 class DiagnosisLLM(ABC):
@@ -108,6 +126,49 @@ class GeminiDiagnosisLLM(DiagnosisLLM):
         # response.text is JSON matching DiagnosisReport's shape.
         report = DiagnosisReport.model_validate_json(response.text)
         report.llm_used = "gemini"
+        return report
+
+
+class GroqDiagnosisLLM(DiagnosisLLM):
+    """Groq free-tier implementation, via the groq SDK. Used as the middle
+    tier of the fallback chain (Gemini -> Groq -> stub) — see
+    GeminiGroqStubFallbackLLM below.
+
+    Model: openai/gpt-oss-120b. Chosen because it's one of the few models
+    on Groq's free tier with `strict: true` structured-output support
+    (constrained decoding — guaranteed schema adherence, not best-effort
+    JSON matching), which this diagnosis pipeline depends on for reliable
+    parsing. Confirmed free-tier limits: 30 RPM / 1,000 RPD / 8,000 TPM /
+    200,000 TPD — well above what a single pipeline run (12 anomalies)
+    needs.
+    """
+
+    def __init__(self, model: str | None = None):
+        from groq import Groq
+
+        self._client = Groq(api_key=os.environ["GROQ_API_KEY"])
+        self._model = model or os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
+
+    def generate(self, event: dict, context: dict) -> DiagnosisReport:
+        payload = json.dumps({"event": event, "context": context}, default=str)
+        response = self._client.chat.completions.create(
+            model=self._model,
+            temperature=0,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": payload},
+            ],
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "diagnosis_report",
+                    "strict": True,
+                    "schema": _DiagnosisReportFields.model_json_schema(),
+                },
+            },
+        )
+        fields = _DiagnosisReportFields.model_validate_json(response.choices[0].message.content)
+        report = DiagnosisReport(**fields.model_dump(), llm_used="groq")
         return report
 
 
@@ -203,48 +264,69 @@ class StubDiagnosisLLM(DiagnosisLLM):
         )
 
 
-class GeminiWithStubFallbackLLM(DiagnosisLLM):
-    """Wraps GeminiDiagnosisLLM with a narrow, automatic fallback to
-    StubDiagnosisLLM — but only when Gemini fails with 429
-    RESOURCE_EXHAUSTED (the free-tier quota/rate limit). That's an expected,
-    temporary condition on the free tier, not a bug, so it shouldn't 500 the
-    request — a diagnosis (even the deterministic stub one) is more useful
-    to the caller than an error.
+class GeminiGroqStubFallbackLLM(DiagnosisLLM):
+    """Wraps GeminiDiagnosisLLM -> GroqDiagnosisLLM -> StubDiagnosisLLM,
+    falling through the chain only on each provider's own quota/rate-limit
+    error — an expected, temporary condition on a free tier, not a bug, so
+    it shouldn't 500 the request. A diagnosis (even the deterministic stub
+    one) is more useful to the caller than an error.
 
-    Any other Gemini failure (bad API key, network error, malformed
-    request, a non-429 API error) is re-raised as-is — those are real bugs
-    that should surface, not get silently swallowed by the fallback.
+    Gemini quota exhaustion is `google.genai.errors.ClientError` with
+    `code == 429` and `status == "RESOURCE_EXHAUSTED"` (Gemini overloads
+    ClientError for several 4xx cases, so those two fields must both be
+    checked). Groq quota exhaustion is `groq.RateLimitError` — Groq gives
+    rate-limit errors their own exception class (distinct from
+    BadRequestError/AuthenticationError/etc.), so no field-checking is
+    needed there, just the type.
+
+    Any other failure from either provider (bad API key, network error,
+    malformed request, a non-429 API error) is re-raised as-is — those are
+    real bugs that should surface, not get silently swallowed by the
+    fallback.
     """
 
     def __init__(self):
         self._gemini = GeminiDiagnosisLLM()
+        self._groq = GroqDiagnosisLLM()
         self._stub = StubDiagnosisLLM()
 
     def generate(self, event: dict, context: dict) -> DiagnosisReport:
-        from google.genai import errors
+        from google.genai import errors as genai_errors
+        from groq import RateLimitError as GroqRateLimitError
 
         try:
             return self._gemini.generate(event, context)
-        except errors.ClientError as e:
-            if e.code == 429 and e.status == "RESOURCE_EXHAUSTED":
-                logger.warning(
-                    "Gemini quota exhausted (429 RESOURCE_EXHAUSTED) for event %s — "
-                    "falling back to StubDiagnosisLLM for this request: %s",
-                    event.get("entity_id"),
-                    e,
-                )
-                return self._stub.generate(event, context)
-            raise
+        except genai_errors.ClientError as e:
+            if not (e.code == 429 and e.status == "RESOURCE_EXHAUSTED"):
+                raise
+            logger.warning(
+                "Gemini quota exhausted (429 RESOURCE_EXHAUSTED) for event %s — "
+                "falling back to Groq for this request: %s",
+                event.get("entity_id"),
+                e,
+            )
+
+        try:
+            return self._groq.generate(event, context)
+        except GroqRateLimitError as e:
+            logger.warning(
+                "Groq quota exhausted (429) for event %s — falling back to "
+                "StubDiagnosisLLM for this request: %s",
+                event.get("entity_id"),
+                e,
+            )
+            return self._stub.generate(event, context)
 
 
 def get_diagnosis_llm() -> DiagnosisLLM:
     """Gemini first (the chosen free-tier provider, wrapped with a
-    quota-only stub fallback — see GeminiWithStubFallbackLLM), then
-    Anthropic if somehow configured instead, otherwise the free stub. This
-    is the one place that needs to change when the provider changes again.
+    quota-only fallback chain through Groq then the stub — see
+    GeminiGroqStubFallbackLLM), then Anthropic if somehow configured
+    instead, otherwise the free stub. This is the one place that needs to
+    change when the provider changes again.
     """
     if os.environ.get("GEMINI_API_KEY"):
-        return GeminiWithStubFallbackLLM()
+        return GeminiGroqStubFallbackLLM()
     if os.environ.get("ANTHROPIC_API_KEY"):
         return AnthropicDiagnosisLLM()
     return StubDiagnosisLLM()
