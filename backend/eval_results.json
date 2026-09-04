@@ -1,0 +1,65 @@
+{
+  "reference_date": "2026-09-03T00:00:00",
+  "ground_truth_path": "/home/skhaire/tesla/tesla-FDE/data-gen/output/ground_truth.json",
+  "detected_count": 12,
+  "ground_truth_count": 13,
+  "overall": {
+    "true_positives": 12,
+    "false_positives": 0,
+    "false_negatives": 1,
+    "precision": 1.0,
+    "recall": 0.9230769230769231
+  },
+  "by_anomaly_type": {
+    "stuck_order": {
+      "true_positives": 7,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.875
+    },
+    "delayed_delivery": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "duplicate_entry": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": null,
+      "recall": null
+    },
+    "quantity_mismatch": {
+      "true_positives": 4,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0
+    }
+  },
+  "false_positives": [],
+  "false_negatives": [
+    {
+      "entity_id": "P00076",
+      "anomaly_type": "stuck_order",
+      "field": "state",
+      "expected": {
+        "source": "erp",
+        "entity_id": "P00076",
+        "field": "state",
+        "expected_value": "done",
+        "actual_value": "assigned",
+        "timestamp": "2026-09-02T00:00:00",
+        "anomaly_type": "stuck_order",
+        "duplicate_of": null,
+        "product": null,
+        "location": null,
+        "qty_before_injection": null,
+        "qty_after_injection": null
+      }
+    }
+  ]
+}

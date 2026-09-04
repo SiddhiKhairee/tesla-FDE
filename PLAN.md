@@ -62,10 +62,10 @@ Priority key: **P0** = must-do · **P1** = important · **P2** = stretch, only i
 - [x] Define the shared event schema — `{source, entity_id, field, expected, actual, timestamp}` — used by both the ERP and failure-report paths — **P0**
 
 **Sequential**
-- [ ] Build rule-based detection logic on top of the fetch layer (mismatch checks, stuck-order checks, quantity drift) — **P0**
-- [ ] Build the LangGraph diagnosis agent: takes a raised event, reasons about likely cause, drafts a structured report — **P0**
+- [x] Build rule-based detection logic on top of the fetch layer (mismatch checks, stuck-order checks, quantity drift) — **P0**
+- [x] Build the LangGraph diagnosis agent: takes a raised event, reasons about likely cause, drafts a structured report — **P0**
 - [ ] Wire detection → event schema → agent, end to end — **P0**
-- [ ] Write the eval script: compare detected anomalies against Day 2's ground truth, compute precision/recall — **P0**
+- [x] Write the eval script: compare detected anomalies against Day 2's ground truth, compute precision/recall — **P0**
   - This number is your strongest defensible claim in the pitch — don't skip it.
 
 **Parallel — polish, lower priority**
@@ -91,7 +91,7 @@ Priority key: **P0** = must-do · **P1** = important · **P2** = stretch, only i
 - [ ] Write a handful of tests covering both pipelines (ERP path + report path) — **P1**
 
 **Stretch — only if ahead of schedule**
-- [ ] Stub the Version-A adapter: feed the AI4I sensor dataset into the same engine as a forward-looking demo — **P2**
+- [ ] Stub the Version-A adapter: feed the AI4I sensor dataset through the same shared event schema, diagnosis-agent structure, and notification path as Version B. Note: the diagnose node and report schema reuse directly, but gather_context needs a second, sensor-specific implementation (computing things like std-deviations-off-baseline and cross-sensor drift, instead of ERP concepts like days-overdue or product/location match counts) — not a full rewrite of the agent, just a parallel context-computation function feeding the same diagnose node. — **P2**
 
 **Depends on:** the shared event schema and diagnosis agent from Day 3.
 
