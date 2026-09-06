@@ -47,6 +47,21 @@ class DiagnosisReport(BaseModel):
     # DiagnosisLLM actually produced the report. Lets a caller tell real
     # model reasoning apart from the deterministic stub without reading logs.
     llm_used: Literal["gemini", "groq", "anthropic", "stub"] | None = None
+    # Version A (sensor path) only — see sensor_detection_version_a.md
+    # Section 3. Reusing this shared schema rather than forking a
+    # sensor-specific one, per that doc's instruction not to fork if
+    # avoidable: `likely_cause`/`reasoning`/`recommended_action` already
+    # cover what the spec calls explanation/suggested_solution, and
+    # `confidence` is kept categorical (not a separate 0-1/0-100 field) so
+    # the same field means the same thing across every path instead of
+    # forking its type per source — that's the "open decision" from
+    # Section 8, locked in as categorical for schema consistency. The one
+    # field with no ERP/human-report equivalent is `predicted_failure_type`,
+    # added here, optional and unused by the other two paths. Diagnosis
+    # *accuracy* (aggregate, ground-truth-validated, eval-only) is a
+    # separate concept from this field and is never computed or stored here
+    # — see eval_diagnosis.py (not yet built) for that number.
+    predicted_failure_type: Literal["TWF", "HDF", "PWF", "OSF", "RNF", "Unclear"] | None = None
 
 
 class _DiagnosisReportFields(BaseModel):

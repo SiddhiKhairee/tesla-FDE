@@ -1,0 +1,16 @@
+{
+  "total_rows": 10000,
+  "machine_failure_1_count": 339,
+  "machine_failure_0_count": 9661,
+  "failure_type_counts": {
+    "TWF": 46,
+    "HDF": 115,
+    "PWF": 95,
+    "OSF": 98,
+    "RNF": 19
+  },
+  "rows_with_no_failure_type_flagged_but_machine_failure_1": 9,
+  "rows_with_multiple_failure_types_flagged": 24,
+  "product_id_unique_count": 10000,
+  "udi_unique_count": 10000
+}

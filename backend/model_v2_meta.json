@@ -1,0 +1,30 @@
+{
+  "feature_columns": [
+    "Air temperature [K]",
+    "Process temperature [K]",
+    "Rotational speed [rpm]",
+    "Torque [Nm]",
+    "Tool wear [min]",
+    "temp_differential",
+    "mechanical_power",
+    "strain_proxy"
+  ],
+  "classification_threshold": 0.6,
+  "threshold_note": "Not part of the sklearn model object \u2014 predict_proba has no concept of it. Anything loading this model must read this threshold from here rather than hardcoding 0.5 or any other value separately.",
+  "random_state": 42,
+  "hyperparameters": {
+    "class_weight": "balanced",
+    "n_estimators": 300,
+    "max_depth": 10,
+    "min_samples_leaf": 5
+  },
+  "training_data": "train split only (60% of data-gen/sensor/ai4i2020.csv, stratified on Machine failure) \u2014 not train+val combined",
+  "split_method": "Two-stage stratified train_test_split via ml_detector.split_dataset: 60/20/20 train/val/test, stratified on Machine failure at each stage, random_state=42",
+  "reported_test_set_confusion_matrix": {
+    "true_positives": 57,
+    "false_positives": 15,
+    "true_negatives": 1917,
+    "false_negatives": 11
+  },
+  "reported_test_set_metrics_source": "data-gen/sensor/sensor_detection_eval.json (key: v2_ml_classifier)"
+}
