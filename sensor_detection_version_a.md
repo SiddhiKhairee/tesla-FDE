@@ -284,6 +284,59 @@ This and Section 4 are two independent scripts/functions (or two independent mod
 
 ---
 
+## 5.5 Known Limitation / Future Work — HDF Diagnosis Accuracy
+
+**Status: parked, not investigated further — logged here so it isn't lost, per the "we're
+behind schedule" call. Do not spend more time or API calls on this until Section 6 (demo)
+and the README are done; only come back to it if there's time left over.**
+
+The real diagnosis-agent eval (Section 5, run against Groq — Gemini was down with a 503 at
+the time) came back **25 of 50 (50%) correct overall**, but that aggregate number is
+misleading taken alone:
+
+- **HDF made up 25 of the 50 sampled true positives — half the entire sample** — precisely
+  *because* the ML detector's Section 4 win means it now catches ~100% of real HDF
+  failures. HDF dominating the TP pool it's sampled from is a direct, mechanical
+  consequence of the detection-side fix, not a coincidence.
+- **PWF (11/11) and OSF (10/13) are both strong.** These are exactly the two failure types
+  `mechanical_power`/`strain_proxy` were built to catch (Section 1's derived features), and
+  the diagnosis agent's accuracy on them tracks that design intent.
+- **HDF (3/25) is the one real weak spot** — the agent mostly answered `Unclear` rather than
+  a confident wrong guess, which is the "honest" failure mode, but it means the agent can't
+  reliably identify HDF from what it's currently given.
+- TWF (1/1) and RNF (0/0) are too small a sample in this run to read anything into either
+  direction.
+
+**Leading hypothesis, not yet verified:** HDF's real trigger is a joint, individually-modest
+pattern (temperature differential *and* rotational speed *together* — see Section 1.4's
+known limitation), and `rank_all_deviations`'s description layer only surfaces the top 2-3
+sensors ranked by individual z-score magnitude. The two signals that actually matter for HDF
+may be getting truncated out of the bundle entirely on some rows, or included but reading as
+too weak ("furthest from normal, though not individually abnormal") to be convincing on
+their own next to whatever ranked higher.
+
+**Open question to investigate later, time permitting:** pull the ~22 wrong HDF predictions
+from this eval run and check how often `temp_differential`/`Rotational speed [rpm]` were
+actually present in the `deviating_sensors` list that was sent to the agent, versus
+truncated out by the top-N ranking.
+
+- If they were usually **present** and still missed, the honest conclusion is that HDF
+  diagnosis is a genuine limitation of this approach — detection can catch it (via the ML
+  model reasoning over all 8 raw signals jointly), but the current text-based explanation
+  layer can't communicate that same joint pattern convincingly to an LLM once it's reduced
+  to a ranked list of individually-modest deviations.
+- If they were usually **absent** (truncated out by the top-2-3 cutoff), widening
+  `rank_all_deviations`'s `top_n` — e.g. to include all 8 features rather than just the
+  top-ranked few, at least for HDF-suspected rows — is a concrete, testable fix worth
+  trying before concluding this is a hard limitation.
+
+**For now:** the 25/50 number is accepted as-is, reported honestly with the per-failure-type
+breakdown alongside it (never the bare aggregate alone) — see
+`data-gen/sensor/sensor_detection_eval.json`'s `v_diagnosis_agent_eval` entry for the full
+per-row data this investigation would start from.
+
+---
+
 ## 6. Live demo — Slack notification path
 
 Separate from both eval scripts above. Purpose: show the pipeline actually notifying,

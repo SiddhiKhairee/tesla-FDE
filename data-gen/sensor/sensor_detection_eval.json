@@ -548,5 +548,2309 @@
       "accuracy": 0.973
     },
     "meets_trust_condition": true
+  },
+  "v_diagnosis_agent_eval": {
+    "true_positive_set_size": 57,
+    "sample_size": 50,
+    "sample_method": "fixed-seed random sample of 50 (seed=42)",
+    "seed": 42,
+    "scored_count": 50,
+    "errored_count": 0,
+    "fell_back_to_stub_count": 0,
+    "accuracy": 0.5,
+    "accuracy_report_string": "25 of 50 sampled true positives correct (fixed seed=42); 0 fell back to stub and 0 errored \u2014 both excluded from this number",
+    "per_failure_type": {
+      "TWF": {
+        "real_instances_in_sample": 1,
+        "correct": 1
+      },
+      "HDF": {
+        "real_instances_in_sample": 25,
+        "correct": 3
+      },
+      "PWF": {
+        "real_instances_in_sample": 11,
+        "correct": 11
+      },
+      "OSF": {
+        "real_instances_in_sample": 13,
+        "correct": 10
+      },
+      "RNF": {
+        "real_instances_in_sample": 0,
+        "correct": 0
+      },
+      "AMBIGUOUS_NO_TYPE_FLAGGED": {
+        "real_instances_in_sample": 0,
+        "correct": 0,
+        "note": "Machine failure==1 but no TWF/HDF/PWF/OSF/RNF column was flagged for this row (see data_summary.json \u2014 9 such rows exist dataset-wide). Scored as correct only if the agent predicted 'Unclear', since no single correct label actually exists to match against."
+      }
+    },
+    "confidence_values_returned_ungraded": [
+      "low",
+      "medium",
+      "medium",
+      "high",
+      "low",
+      "high",
+      "low",
+      "high",
+      "medium",
+      "low",
+      "low",
+      "low",
+      "high",
+      "high",
+      "medium",
+      "low",
+      "low",
+      "low",
+      "medium",
+      "high",
+      "low",
+      "medium",
+      "low",
+      "high",
+      "high",
+      "low",
+      "low",
+      "high",
+      "low",
+      "medium",
+      "medium",
+      "medium",
+      "low",
+      "medium",
+      "medium",
+      "medium",
+      "low",
+      "high",
+      "low",
+      "medium",
+      "low",
+      "low",
+      "medium",
+      "medium",
+      "high",
+      "medium",
+      "low",
+      "low",
+      "high",
+      "medium"
+    ],
+    "per_row_results": [
+      {
+        "entity_id": "L47429",
+        "ml_probability": 0.9308053534861551,
+        "real_types": [
+          "OSF"
+        ],
+        "error": null,
+        "predicted_failure_type": "OSF",
+        "correct": true,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "Elevated tool wear together with higher mechanical power and strain indicate the tool\u2011workpiece assembly is operating under greater load than its current wear state can safely handle, i.e., an over\u2011strain condition.",
+        "reasoning": "All three deviating sensors are above their baselines (strain_proxy z\u22482.97, mechanical_power z\u22482.00, tool_wear z\u22481.77). Although none crossed a hard threshold (the notes label them as \"furthest from normal, though not individually abnormal\"), the pattern of simultaneous increase in strain, power and wear matches the description of an Overstrain Failure (OSF) more closely than the other categories. Heat\u2011related signatures are absent, and the power increase is not a clear under\u2011 or over\u2011power fault, so OSF is the best fit with modest confidence.",
+        "recommended_action": "1. Stop the machine and inspect the cutting tool for wear; replace if wear exceeds the prescribed limit. 2. Reduce feed rate or spindle speed to lower mechanical load and strain. 3. Re\u2011calibrate the process parameters and monitor strain_proxy, mechanical_power, and tool_wear closely during the next run. 4. Log the event and schedule a detailed root\u2011cause analysis if the condition recurs.",
+        "deviating_sensors": [
+          {
+            "sensor": "strain_proxy",
+            "value": 12251.6,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 2.9662420754017766,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 8268.776584003457,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 2.0014240384030737,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Tool wear [min]",
+            "value": 218,
+            "baseline_mean": 106.69371700652107,
+            "baseline_std": 62.94579046389409,
+            "z_score": 1.7682879533830713,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "M19461",
+        "ml_probability": 0.9325676855038879,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "PWF",
+        "correct": false,
+        "confidence": "medium",
+        "llm_used": "groq",
+        "likely_cause": "Elevated mechanical power and torque suggest the drive is delivering more energy than the process normally requires, indicating a possible power delivery anomaly.",
+        "reasoning": "Both torque (+1.55\u202f\u03c3) and mechanical power (+1.54\u202f\u03c3) are above their baselines while the temperature differential is slightly below baseline. The pattern matches the definition of a Power Failure (PWF), where the mechanical power delivered falls outside the expected range. Although none of the readings crossed a hard threshold (they are marked as \u201cfurthest from normal, though not individually abnormal\u201d), the concurrent upward shift in torque and power provides moderate evidence for an over\u2011power condition. The temperature deviation does not support a heat\u2011dissipation issue, and there is no tool\u2011wear sensor data to back a Tool Wear or Overstrain failure, so PWF is the best fit.",
+        "recommended_action": "1. Verify the motor\u2011drive setpoint and control loop parameters for drift; reset or recalibrate if needed. 2. Compare the current load demand with the expected process load; adjust the workpiece or feed rate to bring torque/power back to nominal. 3. Perform a short functional test under supervised conditions while monitoring torque, power, and temperature. 4. If the anomaly persists, inspect the drive and coupling for mechanical wear or slip and consider a preventive maintenance check of the power electronics.",
+        "deviating_sensors": [
+          {
+            "sensor": "temp_differential",
+            "value": 8.100000000000023,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -1.9440801738922726,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 54.3,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 1.5487986284722215,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 7801.579868512606,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 1.5394907719611945,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "M21538",
+        "ml_probability": 0.9169016027138933,
+        "real_types": [
+          "PWF"
+        ],
+        "error": null,
+        "predicted_failure_type": "PWF",
+        "correct": true,
+        "confidence": "medium",
+        "llm_used": "groq",
+        "likely_cause": "Excessive mechanical power and torque delivery relative to normal operating conditions, indicating the drive is supplying more power than required for the current load.",
+        "reasoning": "Both mechanical_power (z\u22482.9) and Torque [Nm] (z\u22482.74) are significantly above their baselines, while Tool wear is unusually low. The pattern of high power and torque without accompanying high tool wear matches the Power Failure (PWF) category, which is defined by mechanical power falling outside the process need\u2014typically too much. The detector notes that none of the readings individually crossed a hard threshold, so the evidence is suggestive but not definitive, leading to a medium confidence level.",
+        "recommended_action": "Inspect and, if necessary, lower the drive power set\u2011point or feed rate. Verify that the motor controller is not commanding excess torque. Check for any sudden load changes or blockage that could be causing the drive to over\u2011compensate. After adjustments, monitor mechanical_power and torque for return to normal ranges before resuming production.",
+        "deviating_sensors": [
+          {
+            "sensor": "mechanical_power",
+            "value": 9177.806890295175,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 2.9002131881487503,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 65.6,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 2.7417784035044486,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Tool wear [min]",
+            "value": 0,
+            "baseline_mean": 106.69371700652107,
+            "baseline_std": 62.94579046389409,
+            "z_score": -1.6950095664891354,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L56844",
+        "ml_probability": 0.9135684773885867,
+        "real_types": [
+          "OSF"
+        ],
+        "error": null,
+        "predicted_failure_type": "OSF",
+        "correct": true,
+        "confidence": "high",
+        "llm_used": "groq",
+        "likely_cause": "Excessive mechanical strain on the cutting tool caused by the combination of elevated torque and advanced tool wear, reflected in the abnormally high strain proxy reading.",
+        "reasoning": "The strain_proxy sensor exceeded its normal range (z\u22483.1, note: \"exceeded normal range\"), indicating the workpiece/tool assembly is experiencing higher than expected mechanical strain. Both torque (z\u22481.6) and tool wear (z\u22482.0) are above baseline, though not individually flagged as abnormal, and their simultaneous elevation supports an over\u2011strain condition where the worn tool is being forced with higher torque, pushing the system beyond its safe strain limits. This pattern aligns with the OSF (Overstrain Failure) definition, which describes higher torque together with higher accumulated tool wear leading to excessive strain.",
+        "recommended_action": "Immediately reduce the cutting load or spindle speed to lower torque, inspect the tool for wear and replace it if wear exceeds the manufacturer\u2019s limit, and verify tool alignment. After corrective action, monitor strain, torque, and tool\u2011wear sensors for return to normal ranges before resuming full production.",
+        "deviating_sensors": [
+          {
+            "sensor": "strain_proxy",
+            "value": 12658.8,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 3.1165145617674517,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "Tool wear [min]",
+            "value": 231,
+            "baseline_mean": 106.69371700652107,
+            "baseline_std": 62.94579046389409,
+            "z_score": 1.9748148697057257,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 54.8,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 1.601585344181612,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "M19309",
+        "ml_probability": 0.8403510619847274,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "Unclear",
+        "correct": false,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "The sensor deviations (lower temp differential, higher strain proxy, higher mechanical power) do not align cleanly with any single failure pattern in the taxonomy. Temperature is below normal, while strain and power are modestly elevated, producing a mixed signal that could stem from early tool wear, a marginal power overshoot, or emerging over\u2011strain, but none are definitive.",
+        "reasoning": "Temp_differential is 2.15\u202f\u03c3 below its mean, indicating cooler-than\u2011expected conditions, which contradicts a Heat Dissipation Failure. Mechanical_power is 1.57\u202f\u03c3 above mean and strain_proxy 1.75\u202f\u03c3 above mean, suggesting increased load or resistance, but the deviations are flagged only as \"furthest from normal, though not individually abnormal,\" meaning no hard threshold was crossed. The combination does not match the typical signatures of Tool Wear Failure (which would usually show elevated torque or wear metrics), Power Failure (which would show a clear over\u2011 or under\u2011power condition), or Overstrain Failure (which expects high torque together with wear). Consequently the evidence is ambiguous, leading to an \"Unclear\" classification with low confidence.",
+        "recommended_action": "Perform a targeted inspection: 1) Visually examine the cutting tool for wear or damage; 2) Verify torque and rotational speed readings against setpoints; 3) Check coolant flow and heat\u2011sink performance despite the low temperature reading; 4) Log the current sensor values and monitor the next few cycles for trend amplification; 5) If any parameter crosses its operational threshold, intervene according to the relevant failure SOP.",
+        "deviating_sensors": [
+          {
+            "sensor": "temp_differential",
+            "value": 7.900000000000034,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -2.1464229345670347,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "strain_proxy",
+            "value": 8959.5,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 1.751330355449809,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 7835.697564730589,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 1.5732240974210852,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L54191",
+        "ml_probability": 0.9890582067442782,
+        "real_types": [
+          "PWF"
+        ],
+        "error": null,
+        "predicted_failure_type": "PWF",
+        "correct": true,
+        "confidence": "high",
+        "llm_used": "groq",
+        "likely_cause": "Insufficient mechanical power delivery (drive or transmission issue) leading to low torque and power despite excessive rotational speed.",
+        "reasoning": "Rotational speed is far above normal (z\u22486.5) and has exceeded its range, while torque and derived mechanical power are significantly below baseline (z\u2248-2.9). This pattern matches the Power Failure (PWF) category, which describes power being outside required levels, typically too low. Other failure types (tool wear, heat dissipation, overstrain) are not supported by the observed low torque and power, and no temperature data is present. Hence PWF is the best fit.",
+        "recommended_action": "Inspect and test the drive motor and power transmission components (gearbox, belts, couplings, motor controller). Measure actual output torque and power, check for slip, wear, or controller faults, and repair or replace the defective element. After corrective action, monitor speed, torque, and power for return to normal ranges.",
+        "deviating_sensors": [
+          {
+            "sensor": "Rotational speed [rpm]",
+            "value": 2633,
+            "baseline_mean": 1540.2600144912535,
+            "baseline_std": 167.39473403228345,
+            "z_score": 6.527923305508539,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 12.2,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": -2.8958428342584663,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 3363.870805806783,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": -2.8482229573631126,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L51655",
+        "ml_probability": 0.6819075106544702,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "Unclear",
+        "correct": false,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "The deviating sensors (temp_differential, tool wear, strain_proxy) are all modestly below their historical means and none crossed a threshold; the pattern does not match the characteristic signatures of any defined failure type.",
+        "reasoning": "Tool Wear Failure expects elevated wear, but wear is lower. Heat Dissipation Failure expects high temperature, but temperature is lower. Overstrain expects high torque/strain and higher wear, which is not observed. Power Failure could manifest as low power, yet we have no direct power measurement and the deviations are weak. The evidence is therefore ambiguous and does not cleanly map to a single taxonomy category.",
+        "recommended_action": "Schedule a visual inspection of the cutting tool and temperature sensors, verify sensor calibrations, and continue to monitor the three metrics for any trend toward abnormal values. If deviations persist or worsen, consider a more detailed diagnostic (e.g., torque and power logging).",
+        "deviating_sensors": [
+          {
+            "sensor": "temp_differential",
+            "value": 7.800000000000011,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -2.247594314904444,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Tool wear [min]",
+            "value": 10,
+            "baseline_mean": 106.69371700652107,
+            "baseline_std": 62.94579046389409,
+            "z_score": -1.536142707779401,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "strain_proxy",
+            "value": 418.0,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": -1.4008121845610446,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "M22857",
+        "ml_probability": 0.9697112185192409,
+        "real_types": [
+          "PWF"
+        ],
+        "error": null,
+        "predicted_failure_type": "PWF",
+        "correct": true,
+        "confidence": "high",
+        "llm_used": "groq",
+        "likely_cause": "Insufficient torque output from the drive causing low mechanical power despite high rotational speed.",
+        "reasoning": "Rotational speed is far above its normal range (z\u22487) while both torque and derived mechanical power are significantly below normal (z\u2248-3). This pattern indicates the machine is spinning fast but not delivering the expected torque, resulting in low power output, which matches the definition of a Power Failure (PWF). Other failure modes (tool wear, heat dissipation, overstrain) would show different sensor signatures such as elevated torque or temperature, which are absent.",
+        "recommended_action": "Stop the machine, inspect the motor/drive and torque transmission components (couplings, belts, gearboxes) for slip or fault, verify motor current and voltage, and correct or replace the faulty drive or mechanical element before restarting.",
+        "deviating_sensors": [
+          {
+            "sensor": "Rotational speed [rpm]",
+            "value": 2710,
+            "baseline_mean": 1540.2600144912535,
+            "baseline_std": 167.39473403228345,
+            "z_score": 6.987913880750589,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 2752.7682028304966,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": -3.452440864219306,
+            "direction": "below",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 9.7,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": -3.159776412805419,
+            "direction": "below",
+            "note": "exceeded normal range"
+          }
+        ]
+      },
+      {
+        "entity_id": "M19587",
+        "ml_probability": 0.9106461124582271,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "OSF",
+        "correct": false,
+        "confidence": "medium",
+        "llm_used": "groq",
+        "likely_cause": "Elevated tool wear together with increased strain proxy suggests the tool is operating under higher mechanical load than its current wear condition can comfortably handle.",
+        "reasoning": "The deviation evidence shows three sensors (strain_proxy, Air temperature [K], Tool wear [min]) all above their baselines with z\u2011scores around 1.6\u20112.1. Although none exceed explicit anomaly thresholds (notes indicate \u201cfurthest from normal, though not individually abnormal\u201d), the co\u2011occurrence of higher strain and higher wear aligns with the Overstrain Failure (OSF) pattern, which is defined by higher torque/strain combined with elevated tool wear. Heat\u2011related categories lack supporting speed data, and power\u2011related metrics are absent, making OSF the most consistent match.",
+        "recommended_action": "Inspect the cutting tool for wear and replace or re\u2011sharpen it if wear exceeds specifications. Reduce cutting load (e.g., lower feed rate or spindle speed) to decrease mechanical strain, and re\u2011monitor strain_proxy, tool wear, and temperature for return to baseline levels.",
+        "deviating_sensors": [
+          {
+            "sensor": "strain_proxy",
+            "value": 9870.0,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 2.087339930194278,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Air temperature [K]",
+            "value": 303.4,
+            "baseline_mean": 299.9739985508747,
+            "baseline_std": 1.9907479694438195,
+            "z_score": 1.7209619207008209,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Tool wear [min]",
+            "value": 210,
+            "baseline_mean": 106.69371700652107,
+            "baseline_std": 62.94579046389409,
+            "z_score": 1.641194466415284,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L51928",
+        "ml_probability": 0.9806292140434585,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "Unclear",
+        "correct": false,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "The sensor deviations are modest and none cross defined abnormal thresholds. Temperature is slightly high, tool wear is lower than average, and the differential temperature is modestly below mean, providing no clear signature of any specific failure mode.",
+        "reasoning": "Tool Wear Failure would show elevated wear, which is absent (wear is below average). Heat Dissipation Failure would manifest as a clear rise in air/process temperature relative to speed, but the temperature rise is only +1.6\u202f\u03c3 and not flagged as abnormal. Power Failure and Overstrain Failure require torque, speed, or power anomalies, which are not present. The pattern is therefore ambiguous, fitting the \"Unclear\" category with low confidence.",
+        "recommended_action": "Verify sensor calibrations and review recent maintenance logs. Conduct a visual inspection of the tool and cooling system, and monitor temperature, wear, and power metrics over the next few cycles to see if trends emerge. If any metric crosses its alarm threshold, address the corresponding subsystem promptly.",
+        "deviating_sensors": [
+          {
+            "sensor": "temp_differential",
+            "value": 8.0,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -2.0452515542296825,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Air temperature [K]",
+            "value": 303.2,
+            "baseline_mean": 299.9739985508747,
+            "baseline_std": 1.9907479694438195,
+            "z_score": 1.6204971692255925,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Tool wear [min]",
+            "value": 29,
+            "baseline_mean": 106.69371700652107,
+            "baseline_std": 62.94579046389409,
+            "z_score": -1.2342956762309059,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L56196",
+        "ml_probability": 0.9194037824487503,
+        "real_types": [
+          "OSF"
+        ],
+        "error": null,
+        "predicted_failure_type": "OSF",
+        "correct": true,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "Elevated tool wear together with higher-than\u2011normal strain proxy suggests the tool/workpiece is being loaded beyond what its current wear state can tolerate, i.e., an over\u2011strain condition.",
+        "reasoning": "The deviation evidence shows three sensors trending upward: strain_proxy (z\u22482.57), tool wear (z\u22481.67) and mechanical_power (z\u22481.44). All are marked as \u201cfurthest from normal, though not individually abnormal\u201d, meaning none crossed a hard threshold but the pattern of simultaneous increase in wear and strain aligns with the Overstrain Failure (OSF) definition (higher torque/strain combined with higher tool wear). No temperature data points to a heat issue, and the power increase is modest, making a pure Power Failure less likely. The evidence is not strong enough for a high\u2011confidence call, so confidence is set to low.",
+        "recommended_action": "Inspect the cutting tool for wear and replace it if the wear exceeds the recommended limit. Reduce cutting load or feed rate to lower mechanical strain, and re\u2011calibrate the process parameters. After corrective action, monitor strain_proxy, tool wear, and mechanical_power closely for a return to baseline levels.",
+        "deviating_sensors": [
+          {
+            "sensor": "strain_proxy",
+            "value": 11172.400000000001,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 2.567975701910035,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Tool wear [min]",
+            "value": 212,
+            "baseline_mean": 106.69371700652107,
+            "baseline_std": 62.94579046389409,
+            "z_score": 1.6729678381572308,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 7704.148608349275,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 1.44315717463804,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L51800",
+        "ml_probability": 0.9492282491140365,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "OSF",
+        "correct": false,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "Elevated mechanical strain indicated by the strain_proxy sensor reading being well above its normal mean, together with a modest increase in air temperature, points toward the tool or workpiece being loaded beyond its usual capacity.",
+        "reasoning": "The strain_proxy sensor shows a +1.78\u202fz\u2011score (\u22489047 vs 4214 mean), which is the strongest deviation among the three sensors and directly reflects higher mechanical strain. Air temperature is also +1.57\u202fz\u2011score, suggesting some heat buildup, while the temperature differential is lower than normal (\u20111.84\u202fz\u2011score). This pattern matches the description of an Overstrain Failure (OSF), where strain rises without a clear torque or wear signature. Because none of the deviations cross explicit alarm thresholds, the evidence is suggestive but not definitive, leading to low confidence.",
+        "recommended_action": "1. Safely stop the machine. 2. Visually inspect the cutting/forming tool and workpiece for signs of overload or damage (e.g., chipping, deformation). 3. Verify torque, feed rate, and spindle speed settings; reduce load if they are higher than recommended for the current tool condition. 4. If tool wear appears advanced, replace or re\u2011sharpen the tool. 5. After corrective actions, resume operation while closely monitoring strain_proxy and temperature sensors for return to normal ranges.",
+        "deviating_sensors": [
+          {
+            "sensor": "temp_differential",
+            "value": 8.199999999999989,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -1.8429087935549204,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "strain_proxy",
+            "value": 9047.2,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 1.7836950338738509,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Air temperature [K]",
+            "value": 303.1,
+            "baseline_mean": 299.9739985508747,
+            "baseline_std": 1.9907479694438195,
+            "z_score": 1.5702647934879927,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "H34813",
+        "ml_probability": 0.9545218702884106,
+        "real_types": [
+          "OSF"
+        ],
+        "error": null,
+        "predicted_failure_type": "OSF",
+        "correct": true,
+        "confidence": "high",
+        "llm_used": "groq",
+        "likely_cause": "Excessive mechanical strain on a worn tool causing the assembly to operate beyond its safe strain\u2011wear envelope",
+        "reasoning": "Both the strain_proxy (z=3.33) and the Tool wear [min] (z=2.21) are flagged as \"exceeded normal range\" and are elevated in the same direction (above baseline). This combination matches the Overstrain Failure (OSF) definition, which expects higher strain together with higher tool wear. The mechanical_power reading is only modestly high and marked as \"furthest from normal, though not individually abnormal,\" providing little additional diagnostic weight. The pattern does not fit a pure Tool Wear Failure (which would show wear without strain) nor Heat Dissipation or Power failures. Hence OSF is the best fit.",
+        "recommended_action": "Stop the machine, inspect the cutting tool for wear and replace it if the wear limit is exceeded. Verify workpiece clamping and reduce cutting load or feed rate to lower strain. After replacement, re\u2011calibrate the strain sensor and monitor strain and wear trends during the next run to confirm the issue is resolved.",
+        "deviating_sensors": [
+          {
+            "sensor": "strain_proxy",
+            "value": 13234.8,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 3.3290807507326514,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "Tool wear [min]",
+            "value": 246,
+            "baseline_mean": 106.69371700652107,
+            "baseline_std": 62.94579046389409,
+            "z_score": 2.213115157770327,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 7949.465106692588,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 1.6857099316126976,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "M23167",
+        "ml_probability": 0.8689475085837222,
+        "real_types": [
+          "PWF"
+        ],
+        "error": null,
+        "predicted_failure_type": "PWF",
+        "correct": true,
+        "confidence": "high",
+        "llm_used": "groq",
+        "likely_cause": "Excessive mechanical power and torque readings indicate the machine is delivering more power than required, suggesting an overload condition in the drive or control set\u2011point.",
+        "reasoning": "Both mechanical_power (z\u22483.94) and Torque (z\u22483.17) are flagged as \"exceeded normal range\" with large positive deviations. These two variables together define the mechanical power delivered (torque \u00d7 speed). The temperature differential is only mildly elevated and not flagged as abnormal, so heat\u2011dissipation issues are unlikely. The pattern matches the definition of a Power Failure (PWF) \u2013 power being higher than the process needs. No tool\u2011wear or strain indicators are present to support TWF, OSF, or HDF, and the sensor signatures are clear, so the classification is confident.",
+        "recommended_action": "Immediately reduce the machine's power set\u2011point or shut down the drive. Verify the speed and torque limits in the controller, inspect the drive for fault codes, and confirm that the load requirements have not changed. After adjustment, monitor mechanical_power and torque for return to normal ranges before resuming production.",
+        "deviating_sensors": [
+          {
+            "sensor": "mechanical_power",
+            "value": 10233.151638440082,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 3.943668397847042,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 69.7,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 3.174629472321452,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "temp_differential",
+            "value": 11.400000000000034,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": 1.3945753772414993,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L51724",
+        "ml_probability": 0.8831172823721665,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "OSF",
+        "correct": false,
+        "confidence": "medium",
+        "llm_used": "groq",
+        "likely_cause": "Overstrain of the cutting tool or workpiece indicated by elevated strain proxy and higher-than\u2011normal torque despite no temperature rise.",
+        "reasoning": "Both strain_proxy (z\u2248+2.25) and Torque (z\u2248+1.63) are the most deviant sensors in this event, pointing to a mechanical load higher than expected. The temperature differential is actually below baseline, ruling out heat\u2011dissipation issues. The pattern matches the Overstrain Failure (OSF) definition\u2014higher torque together with increased strain\u2014more closely than tool\u2011wear\u2011only or power\u2011failure signatures. However, none of the deviations crossed explicit alarm thresholds, so the evidence is suggestive but not definitive.",
+        "recommended_action": "Stop the machine and inspect the tool and workpiece for signs of overstrain or excessive wear. Reduce cutting load or feed rate, verify alignment, and if wear is evident replace the tool. After corrective action, resume operation while closely monitoring torque and strain readings for return to normal ranges.",
+        "deviating_sensors": [
+          {
+            "sensor": "strain_proxy",
+            "value": 10303.7,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 2.2473919374064435,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "temp_differential",
+            "value": 7.899999999999977,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -2.146422934567092,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 55.1,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 1.6332573736072469,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "M19251",
+        "ml_probability": 0.9808056526164012,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "Unclear",
+        "correct": false,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "Mild below\u2011baseline deviations in temperature differential, tool wear and strain proxy that do not match a specific failure pattern.",
+        "reasoning": "All three deviating sensors are lower than their historical means (z\u2011scores between -1.3 and -2.1) and are flagged only as \u201cfurthest from normal, though not individually abnormal\u201d. Tool wear is unusually low, not high, ruling out Tool Wear Failure. Temperature differential is below normal, contradicting Heat Dissipation Failure. No evidence of excessive torque or power, so Overstrain and Power Failures are unlikely. The pattern does not correspond to any defined category, so the safest classification is Unclear.",
+        "recommended_action": "Conduct a visual inspection of the cutting tool and temperature sensors, verify sensor calibrations, and monitor the three metrics over the next few shifts for any trend. If deviations grow or thresholds are crossed, re\u2011evaluate for specific failure modes.",
+        "deviating_sensors": [
+          {
+            "sensor": "temp_differential",
+            "value": 7.900000000000034,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -2.1464229345670347,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Tool wear [min]",
+            "value": 12,
+            "baseline_mean": 106.69371700652107,
+            "baseline_std": 62.94579046389409,
+            "z_score": -1.5043693360374542,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "strain_proxy",
+            "value": 619.2,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": -1.3265616338322284,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L54104",
+        "ml_probability": 0.6325502057736592,
+        "real_types": [
+          "OSF"
+        ],
+        "error": null,
+        "predicted_failure_type": "TWF",
+        "correct": false,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "Elevated tool wear measurement suggests the cutting tool is approaching its wear limit.",
+        "reasoning": "The strain proxy (z=2.51), mechanical power (z=1.83) and tool\u2011wear reading (z=1.61) are all the furthest from their normal baselines, but none crossed a hard threshold. The only sensor directly tied to a failure mode in the taxonomy is the tool\u2011wear sensor, which is higher than usual and aligns with the description of a Tool Wear Failure (TWF). The other elevated readings could be secondary effects of a worn tool, but without torque or temperature data the evidence is not strong enough for a higher\u2011confidence classification.",
+        "recommended_action": "Inspect the cutting tool for wear and compare against the defined wear limit. If wear exceeds the acceptable threshold, replace or re\u2011condition the tool. Continue monitoring tool\u2011wear, mechanical power, and strain in the next few cycles to confirm whether the trend persists.",
+        "deviating_sensors": [
+          {
+            "sensor": "strain_proxy",
+            "value": 11003.199999999999,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 2.505534383901507,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 8093.465241957632,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 1.8280877580089467,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Tool wear [min]",
+            "value": 208,
+            "baseline_mean": 106.69371700652107,
+            "baseline_std": 62.94579046389409,
+            "z_score": 1.6094210946733372,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "M18674",
+        "ml_probability": 0.9440955080685283,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "Unclear",
+        "correct": false,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "The modest above\u2011average torque and mechanical power together with a slightly lower temperature differential do not cross any alarm thresholds and do not match a specific failure pattern.",
+        "reasoning": "Torque (z\u22482.06) and mechanical_power (z\u22481.94) are the furthest from normal but remain within normal variation; temp_differential is below baseline (z\u2248\u20111.54). No clear indication of tool wear, overheating, power shortage/overload, or over\u2011strain. Because the detector flagged them only as \u201cfurthest from normal, though not individually abnormal,\u201d the evidence is ambiguous, so the failure type cannot be confidently assigned.",
+        "recommended_action": "Continue monitoring the machine and record sensor trends for the next few cycles. Perform a visual inspection of the cutting tool for wear, verify coolant flow and temperature sensors, and check drive settings for any drift. If any sensor exceeds its normal range or the anomaly persists, initiate a detailed diagnostic according to standard maintenance procedures.",
+        "deviating_sensors": [
+          {
+            "sensor": "Torque [Nm]",
+            "value": 59.1,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 2.0555510992823716,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 8206.53116156033,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 1.939879874335055,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "temp_differential",
+            "value": 8.5,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -1.5393946525427489,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L49255",
+        "ml_probability": 0.8679130464365572,
+        "real_types": [
+          "OSF"
+        ],
+        "error": null,
+        "predicted_failure_type": "PWF",
+        "correct": false,
+        "confidence": "medium",
+        "llm_used": "groq",
+        "likely_cause": "Excessive mechanical power delivery causing higher torque and strain",
+        "reasoning": "The deviating sensors are mechanical_power (+2.29\u202f\u03c3), Torque (+2.02\u202f\u03c3) and strain_proxy (+2.68\u202f\u03c3). All are above their baselines, and although each reading is only flagged as \u201cfurthest from normal, though not individually abnormal,\u201d the consistent upward trend across power\u2011related variables points to the machine delivering more power than the process requires. This matches the Power Failure (PWF) category, which is defined by mechanical power falling outside the normal range (typically too high). No temperature\u2011related evidence for Heat Dissipation Failure is present, and there is no direct tool\u2011wear or random\u2011failure signature. Confidence is moderated by the fact that none of the values crossed hard thresholds, so the classification is made with medium confidence.",
+        "recommended_action": "1. Safely stop the equipment. 2. Verify drive and motor settings \u2013 check for unintended speed or torque set\u2011point increases. 3. Reduce feed rate or spindle speed to bring mechanical power back within normal limits. 4. Inspect the motor, inverter, and power supply for signs of overload or drift. 5. After adjustments, monitor mechanical_power, torque, and strain_proxy for a full production cycle before restarting full operation.",
+        "deviating_sensors": [
+          {
+            "sensor": "strain_proxy",
+            "value": 11466.0,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 2.676325412118685,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 8558.955025440031,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 2.28833332277803,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 58.8,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 2.023879069856737,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L56847",
+        "ml_probability": 0.7677543104124026,
+        "real_types": [
+          "OSF"
+        ],
+        "error": null,
+        "predicted_failure_type": "TWF",
+        "correct": false,
+        "confidence": "high",
+        "llm_used": "groq",
+        "likely_cause": "Tool wear has exceeded its normal operating threshold, indicating degradation of the cutting/forming tool.",
+        "reasoning": "The deviation evidence shows the Tool wear sensor reading (238\u202fmin) is well above its baseline mean (\u2248107\u202fmin) with a z\u2011score of 2.09 and is flagged as 'exceeded normal range'. This is the primary signature of a Tool Wear Failure (TWF). The strain proxy is elevated (z\u202f\u2248\u202f2.74) but marked only as 'furthest from normal' and not a threshold breach, and rotational speed is slightly below baseline but not abnormal. No temperature, torque, or power anomalies are reported, so other failure categories lack supporting evidence. Hence the pattern matches TWF best.",
+        "recommended_action": "Schedule immediate inspection and replacement of the tool. After replacement, re\u2011calibrate the tool\u2011wear sensor and monitor the strain and speed readings for any residual anomalies.",
+        "deviating_sensors": [
+          {
+            "sensor": "strain_proxy",
+            "value": 11638.199999999999,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 2.739873845694739,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Tool wear [min]",
+            "value": 238,
+            "baseline_mean": 106.69371700652107,
+            "baseline_std": 62.94579046389409,
+            "z_score": 2.08602167080254,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "Rotational speed [rpm]",
+            "value": 1352,
+            "baseline_mean": 1540.2600144912535,
+            "baseline_std": 167.39473403228345,
+            "z_score": -1.1246471735182901,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "M19118",
+        "ml_probability": 0.9263186339979465,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "Unclear",
+        "correct": false,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "The sensor deviation pattern shows modestly elevated torque (+2.2\u202f\u03c3) and mechanical power (+2.0\u202f\u03c3) together with a slightly lower temperature differential (\u20111.6\u202f\u03c3). None of these readings crossed an individual abnormality threshold \u2013 they are merely the furthest from normal among recent data. The combination does not match the characteristic signatures of tool\u2011wear, heat\u2011dissipation, power\u2011level, or over\u2011strain failures, and there is no clear evidence of a random failure either.",
+        "reasoning": "Torque and power are both above their baselines, which could hint at increased load or emerging wear, but the temperature differential is actually below its baseline, contradicting the heat\u2011dissipation pattern. The lack of a tool\u2011wear sensor reading and the fact that all notes label the deviations as \"furthest from normal, though not individually abnormal\" means the statistical detector does not consider any of these variables to be truly out\u2011of\u2011range. Consequently the evidence is ambiguous and does not cleanly map to any single taxonomy category.",
+        "recommended_action": "Inspect the cutting tool for visible wear or damage, verify coolant flow and temperature sensor operation, and continue to monitor torque, power, and temperature\u2011differential trends over the next few cycles. If any reading exceeds its normal range, re\u2011evaluate the failure classification.",
+        "deviating_sensors": [
+          {
+            "sensor": "Torque [Nm]",
+            "value": 60.7,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 2.2244685895524214,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 8244.366409085063,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 1.9772888690823212,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "temp_differential",
+            "value": 8.400000000000034,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -1.640566032880101,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L51487",
+        "ml_probability": 0.7179774054777829,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "TWF",
+        "correct": false,
+        "confidence": "medium",
+        "llm_used": "groq",
+        "likely_cause": "Increased tool wear causing higher cutting resistance, leading to elevated torque and mechanical power while rotational speed drops.",
+        "reasoning": "Torque is +2.56\u03c3 above baseline and mechanical power +2.16\u03c3, both flagged as the furthest from normal though not crossing thresholds. Rotational speed is -1.68\u03c3. This pattern\u2014higher torque and power with reduced speed\u2014is typical of a dulling cutting tool that requires more force to cut, slowing the spindle. No temperature anomalies are present, making heat\u2011dissipation unlikely, and the power deviation is upward rather than a shortage, pointing away from a classic power\u2011failure scenario. Hence the evidence aligns best with Tool Wear Failure (TWF).",
+        "recommended_action": "Stop the machine, inspect the cutting tool for wear, measure tool wear length or edge condition, and replace the tool if wear exceeds the prescribed limit. After replacement, re\u2011calibrate torque and speed set\u2011points and monitor the next few cycles for return to baseline.",
+        "deviating_sensors": [
+          {
+            "sensor": "Torque [Nm]",
+            "value": 63.9,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 2.5623035700925207,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 8424.714771352139,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 2.155605422510884,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Rotational speed [rpm]",
+            "value": 1259,
+            "baseline_mean": 1540.2600144912535,
+            "baseline_std": 167.39473403228345,
+            "z_score": -1.6802202059534932,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L51318",
+        "ml_probability": 0.9465359124634307,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "Unclear",
+        "correct": false,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "Mild, non\u2011threshold deviations in torque, mechanical power and temperature differential that do not align cleanly with any single failure pattern.",
+        "reasoning": "Torque (+1.9\u202f\u03c3) and mechanical power (+1.6\u202f\u03c3) are modestly above their baselines, while the temperature differential is modestly below (-1.5\u202f\u03c3). All three are flagged only as \u201cfurthest from normal, though not individually abnormal,\u201d meaning none crossed a diagnostic threshold. The combination does not match the typical signatures: Tool Wear Failure would show pronounced torque irregularities and wear metrics; Heat Dissipation Failure would show elevated temperature relative to speed, which is opposite here; Power Failure would require a clear over\u2011 or under\u2011power condition; Overstrain Failure expects high torque together with high strain or wear, which is not evident; Random Failure implies no sensor pattern, yet we have a consistent (though mild) shift. Because the evidence is ambiguous, the safest classification is Unclear with low confidence.",
+        "recommended_action": "Schedule a short\u2011term detailed inspection: verify tool condition and wear, confirm coolant flow and heat\u2011sink performance, and monitor torque, power and temperature\u2011differential trends over the next few cycles. Adjust sensor thresholds if these mild offsets persist.",
+        "deviating_sensors": [
+          {
+            "sensor": "Torque [Nm]",
+            "value": 57.4,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 1.8760762658704433,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 7880.3081804115645,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 1.6173321288695637,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "temp_differential",
+            "value": 8.5,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -1.5393946525427489,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L52886",
+        "ml_probability": 0.9203923883430286,
+        "real_types": [
+          "PWF"
+        ],
+        "error": null,
+        "predicted_failure_type": "PWF",
+        "correct": true,
+        "confidence": "high",
+        "llm_used": "groq",
+        "likely_cause": "Excessive mechanical power and torque indicating the drive is delivering more power than required, likely an overload condition.",
+        "reasoning": "Both Torque (z=3.21) and Mechanical Power (z=3.18) are flagged as \"exceeded normal range\", showing a clear upward deviation from baseline. The strain proxy is also elevated (z=2.04) though not individually abnormal, supporting a higher load on the system. This pattern matches the Power Failure (PWF) definition, which covers situations where the mechanical power delivered is higher than the process needs, leading to overload. No temperature or tool\u2011wear specific signals are present, making other categories less consistent with the data.",
+        "recommended_action": "Immediately reduce or stop the machine load, verify and adjust feed rates and drive settings, inspect the tool for any binding or damage, and bring torque and power readings back within normal limits before restarting operation.",
+        "deviating_sensors": [
+          {
+            "sensor": "Torque [Nm]",
+            "value": 70.0,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 3.2063015017470864,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 9456.193887305277,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 3.17546387078404,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "strain_proxy",
+            "value": 9730.0,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 2.0356745370430143,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "M23105",
+        "ml_probability": 0.950084717022753,
+        "real_types": [
+          "PWF"
+        ],
+        "error": null,
+        "predicted_failure_type": "PWF",
+        "correct": true,
+        "confidence": "high",
+        "llm_used": "groq",
+        "likely_cause": "An overload condition \u2013 the drive is delivering significantly more mechanical power than normal, driven by a torque spike while rotational speed is slightly reduced, indicating the machine is working against an excessive load or a drive overshoot.",
+        "reasoning": "Both mechanical power (z=3.08) and torque (z=3.06) are flagged as \"exceeded normal range\". The power sensor directly combines torque and speed, and its high value confirms a power overload despite the speed being modestly below baseline (z=-1.42, not abnormal). This pattern matches the Power Failure (PWF) taxonomy, which is defined as mechanical power falling outside the process\u2019s normal envelope. No temperature or tool\u2011wear data are present, so HDF, TWF, OSF are less consistent. The clear threshold violations give strong evidence for PWF.",
+        "recommended_action": "1. Immediately pause the machine and engage the emergency stop if safe. 2. Inspect the workpiece and feed mechanism for jams or excessive load. 3. Verify drive settings and torque limits; reduce commanded torque or feed rate as needed. 4. After clearing any obstruction, restart the machine at reduced load and monitor power and torque. 5. If overload recurs, schedule a drive and load\u2011path inspection for possible wear or calibration issues.",
+        "deviating_sensors": [
+          {
+            "sensor": "mechanical_power",
+            "value": 9360.459087174882,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 3.080807621135685,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 68.6,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 3.058498697760792,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "Rotational speed [rpm]",
+            "value": 1303,
+            "baseline_mean": 1540.2600144912535,
+            "baseline_std": 167.39473403228345,
+            "z_score": -1.417368448672322,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L51427",
+        "ml_probability": 0.8908731770661699,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "PWF",
+        "correct": false,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "Excessive mechanical power and torque relative to baseline, suggesting the drive may be delivering more energy than required for the current operation.",
+        "reasoning": "Both mechanical_power (z\u2248+2.33) and Torque [Nm] (z\u2248+2.15) are above their normal means, while temp_differential is slightly below normal. The pattern of higher power and torque without a corresponding temperature rise matches the definition of a Power Failure (PWF), which covers situations where the mechanical power delivered is outside the process need, often as an overload. The deviations are only \"furthest from normal\" rather than threshold violations, so the evidence is suggestive but not definitive.",
+        "recommended_action": "Check the drive and spindle settings for over\u2011speed or over\u2011load conditions. Verify feed rate, spindle speed, and torque limits against the current job specifications. If settings are correct, inspect the motor, coupling, and load path for signs of overload or calibration drift, and adjust or replace components as needed. Monitor the sensors after corrective actions to confirm values return to normal ranges.",
+        "deviating_sensors": [
+          {
+            "sensor": "mechanical_power",
+            "value": 8601.680685528854,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 2.3305776345878417,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 60.0,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 2.1505671875592745,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "temp_differential",
+            "value": 8.399999999999977,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -1.6405660328801586,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "M18666",
+        "ml_probability": 0.7316727260376651,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "HDF",
+        "correct": true,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "Slight heat buildup indicated by marginally elevated air temperature while the spindle is running slower than usual.",
+        "reasoning": "The three deviating sensors are all flagged as the furthest from normal but none exceed abnormal thresholds. Air temperature is +1.17\u03c3 above its baseline while rotational speed is -1.08\u03c3 below baseline, a pattern that matches the Heat Dissipation Failure description (higher temperature with reduced speed). The temperature differential sensor is also below baseline, reinforcing a modest cooling shortfall. Because the deviations are not individually abnormal, confidence in this classification is low.",
+        "recommended_action": "Inspect the machine's cooling system (fans, coolant flow, air filters). Verify that airflow paths are unobstructed and that fan speeds are correct. If cooling is adequate, consider increasing rotational speed slightly or reducing load to see if temperature stabilizes. Log temperature and speed trends for the next few cycles to confirm the pattern.",
+        "deviating_sensors": [
+          {
+            "sensor": "temp_differential",
+            "value": 8.599999999999966,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -1.4382232722053967,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Air temperature [K]",
+            "value": 302.3,
+            "baseline_mean": 299.9739985508747,
+            "baseline_std": 1.9907479694438195,
+            "z_score": 1.168405787587051,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Rotational speed [rpm]",
+            "value": 1360,
+            "baseline_mean": 1540.2600144912535,
+            "baseline_std": 167.39473403228345,
+            "z_score": -1.0768559449217134,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L51565",
+        "ml_probability": 0.6010231551113084,
+        "real_types": [
+          "TWF"
+        ],
+        "error": null,
+        "predicted_failure_type": "TWF",
+        "correct": true,
+        "confidence": "high",
+        "llm_used": "groq",
+        "likely_cause": "Excessive tool wear has progressed beyond the acceptable threshold, as indicated by the tool wear sensor exceeding its normal range, with accompanying elevated strain and lower temperature differential suggesting the worn tool is cutting less efficiently.",
+        "reasoning": "The tool wear sensor shows a value (233\u202fmin) that is more than 2\u202f\u03c3 above the baseline mean and is flagged as \"exceeded normal range,\" directly matching the signature of a Tool Wear Failure (TWF). The strain_proxy and temp_differential readings are only the furthest from normal but not individually abnormal, supporting the primary conclusion without contradicting it. Therefore the evidence cleanly fits the TWF category.",
+        "recommended_action": "Schedule immediate inspection and replacement of the cutting tool. After replacement, re\u2011calibrate the tool\u2011wear sensor and monitor strain and temperature differential for return to baseline. Document wear time and update maintenance intervals as needed.",
+        "deviating_sensors": [
+          {
+            "sensor": "strain_proxy",
+            "value": 10554.9,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 2.3400944142607103,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "temp_differential",
+            "value": 7.899999999999977,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -2.146422934567092,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Tool wear [min]",
+            "value": 233,
+            "baseline_mean": 106.69371700652107,
+            "baseline_std": 62.94579046389409,
+            "z_score": 2.006588241447673,
+            "direction": "above",
+            "note": "exceeded normal range"
+          }
+        ]
+      },
+      {
+        "entity_id": "H34192",
+        "ml_probability": 0.7951792174185566,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "HDF",
+        "correct": true,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "Slightly elevated air temperature, torque, and mechanical power suggest the machine is generating more heat than usual for the current load, pointing to a possible heat\u2011dissipation limitation.",
+        "reasoning": "All three deviating sensors are above their baselines (z\u2011scores 1.58\u20111.82) and are flagged as the \"furthest from normal, though not individually abnormal\". This pattern of modestly higher temperature together with higher torque and power is characteristic of a heat\u2011dissipation issue (HDF). The deviations are not strong enough to cross individual thresholds, so the evidence is weak, leading to low confidence.",
+        "recommended_action": "Check the cooling system: verify coolant flow rate, inspect air filters and fans for blockage, ensure adequate airflow around the spindle, and clean any dust buildup. Record temperature and torque trends for the next few cycles; if they continue to rise, schedule a detailed thermal inspection of the machine.",
+        "deviating_sensors": [
+          {
+            "sensor": "Air temperature [K]",
+            "value": 303.6,
+            "baseline_mean": 299.9739985508747,
+            "baseline_std": 1.9907479694438195,
+            "z_score": 1.8214266721760777,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 54.6,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 1.5804706578978562,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 7838.964821090324,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 1.5764545447947784,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "M23442",
+        "ml_probability": 0.9365982597157311,
+        "real_types": [
+          "PWF"
+        ],
+        "error": null,
+        "predicted_failure_type": "PWF",
+        "correct": true,
+        "confidence": "medium",
+        "llm_used": "groq",
+        "likely_cause": "Excessive mechanical power and torque indicate the drive is delivering more energy than the process requires, likely due to a set\u2011point or load overload condition.",
+        "reasoning": "Both mechanical_power (z=3.77) and Torque [Nm] (z=3.42) are flagged as \"exceeded normal range\" with large positive deviations. The taxonomy defines a Power Failure (PWF) as mechanical power falling outside the needed range, either too low or too high. The observed high power and torque match the \"too much power\" side of that definition. Strain_proxy is elevated but not individually abnormal, providing no strong contrary evidence. No temperature or tool\u2011wear data are present to support HDF, TWF, or OSF, so PWF is the best fit.",
+        "recommended_action": "Immediately reduce or stop the machine load, verify and correct drive set\u2011points or control parameters, inspect the drive and coupling for signs of overload, and re\u2011calibrate torque/power limits. After the machine is safely stopped, perform a quick visual check of the tool for wear and re\u2011start only after confirming power and torque are back within normal ranges.",
+        "deviating_sensors": [
+          {
+            "sensor": "mechanical_power",
+            "value": 10058.123039733082,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 3.7706116753987167,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 72.0,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 3.4174483645846485,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "strain_proxy",
+            "value": 10872.0,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 2.457116529748323,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L49195",
+        "ml_probability": 0.932808567978603,
+        "real_types": [
+          "PWF"
+        ],
+        "error": null,
+        "predicted_failure_type": "PWF",
+        "correct": true,
+        "confidence": "medium",
+        "llm_used": "groq",
+        "likely_cause": "The drive is delivering more mechanical power than typical for the current operating point, reflected by elevated torque and power while rotational speed is below baseline.",
+        "reasoning": "Torque (z\u22482.82) and mechanical power (z\u22482.76) are both above their normal ranges, whereas rotational speed is modestly below baseline (z\u2248\u20111.43). This pattern matches a Power Failure scenario where the machine supplies excess power/torque relative to the speed, rather than a heat\u2011related or tool\u2011wear pattern. The notes indicate the readings are the most unusual but not threshold\u2011violating, so the evidence is suggestive but not definitive, leading to a medium confidence level.",
+        "recommended_action": "1. Verify drive and motor controller setpoints for torque and speed; ensure they match the process specification. 2. Inspect the drive for calibration drift or control loop instability. 3. If a load change is suspected, confirm the workpiece or material properties. 4. Reduce commanded torque or increase speed to bring mechanical power back toward baseline and monitor the sensors for stabilization. 5. Record the adjusted parameters and schedule a follow\u2011up check after one production cycle.",
+        "deviating_sensors": [
+          {
+            "sensor": "Torque [Nm]",
+            "value": 66.3,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 2.8156798054975956,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 9032.73861352791,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 2.756779253957256,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Rotational speed [rpm]",
+            "value": 1301,
+            "baseline_mean": 1540.2600144912535,
+            "baseline_std": 167.39473403228345,
+            "z_score": -1.429316255821466,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L51675",
+        "ml_probability": 0.9664424762270976,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "PWF",
+        "correct": false,
+        "confidence": "medium",
+        "llm_used": "groq",
+        "likely_cause": "Excessive mechanical power and torque output relative to baseline, suggesting the drive is delivering more power than the process requires.",
+        "reasoning": "The deviating sensors show mechanical power (+1.87\u202f\u03c3) and torque (+1.85\u202f\u03c3) above their normal ranges, while the temperature differential is below normal (\u20112.25\u202f\u03c3). The pattern matches a power delivery anomaly rather than heat buildup (temperature is low) or tool\u2011wear signatures (no wear sensor). Over\u2011powering is the hallmark of a Power Failure (PWF) in the taxonomy. Because the deviations are only the most unusual readings and not threshold violations, the evidence is moderate, leading to a medium confidence level.",
+        "recommended_action": "1. Verify the drive set\u2011points and control parameters for power and torque. 2. Compare current load conditions to the nominal process; adjust feed or load if it has changed. 3. If set\u2011points are correct, inspect the drive and motor for drift or calibration issues. 4. Reduce the power set\u2011point by ~5\u201110\u202f% and monitor torque and power for stabilization. 5. Log the readings and schedule a detailed drive and tool inspection if the anomaly persists.",
+        "deviating_sensors": [
+          {
+            "sensor": "temp_differential",
+            "value": 7.7999999999999545,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -2.247594314904502,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 8140.369220275728,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 1.8744633150178047,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 57.2,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 1.8549615795866874,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L51260",
+        "ml_probability": 0.9277381314463857,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "PWF",
+        "correct": false,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "Slightly elevated mechanical power and torque suggest the drive may be delivering more power than the process requires, pointing to a possible power delivery issue.",
+        "reasoning": "Mechanical power is 1.98\u202f\u03c3 above its baseline and torque is 1.94\u202f\u03c3 above baseline. Both are the most deviant readings, though the detector flagged them as \"furthest from normal, though not individually abnormal,\" meaning they have not crossed a hard threshold. The combination of higher-than\u2011normal power and torque aligns with the definition of a Power Failure (PWF), which is characterized by mechanical power falling outside the expected range. No temperature rise (temp_differential is actually below baseline) and no tool\u2011wear data are present, making Heat Dissipation, Tool Wear, or Overstrain less consistent. Because the deviations are moderate and not threshold\u2011violating, confidence is low.",
+        "recommended_action": "Inspect the drive and power set\u2011points for the machine, confirm that the load on the spindle matches the programmed parameters, and monitor mechanical power and torque over the next few cycles. If the elevated readings persist, adjust feed/speed settings or check the drive controller for overspeed or over\u2011torque conditions before proceeding with further machining.",
+        "deviating_sensors": [
+          {
+            "sensor": "mechanical_power",
+            "value": 8242.073046447942,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 1.9750213435219408,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 58.0,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 1.939420324721712,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "temp_differential",
+            "value": 8.399999999999977,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -1.6405660328801586,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L54939",
+        "ml_probability": 0.8012938423780244,
+        "real_types": [
+          "OSF"
+        ],
+        "error": null,
+        "predicted_failure_type": "OSF",
+        "correct": true,
+        "confidence": "medium",
+        "llm_used": "groq",
+        "likely_cause": "Elevated torque and strain indicating the tool/workpiece is experiencing overstrain beyond its normal wear capacity.",
+        "reasoning": "The strain_proxy sensor shows a 2.77\u03c3 increase, torque is 2.07\u03c3 above baseline, and mechanical power is 1.62\u03c3 above baseline. All deviations are flagged as 'furthest from normal, though not individually abnormal', suggesting a consistent upward trend rather than isolated spikes. This pattern matches the Overstrain Failure (OSF) taxonomy, which describes higher torque combined with increased mechanical strain. No temperature anomalies are present, making Heat Dissipation unlikely, and the power increase is moderate rather than a clear overload, so Power Failure is less fitting. Tool Wear could contribute, but without a direct wear measurement the evidence points more directly to overstrain.",
+        "recommended_action": "Inspect the cutting tool for wear or damage, reduce feed rate or cutting load, and monitor torque and strain readings closely. If overstrain persists, replace the tool and re\u2011calibrate process parameters to keep torque and strain within normal operating ranges.",
+        "deviating_sensors": [
+          {
+            "sensor": "strain_proxy",
+            "value": 11721.6,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 2.7706516584719925,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 59.2,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 2.06610844242425,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 7885.648887922669,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 1.6226126678457917,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "M21400",
+        "ml_probability": 0.9196676880420486,
+        "real_types": [
+          "PWF"
+        ],
+        "error": null,
+        "predicted_failure_type": "PWF",
+        "correct": true,
+        "confidence": "medium",
+        "llm_used": "groq",
+        "likely_cause": "Excess mechanical power and torque being delivered relative to normal operating conditions, indicating a possible power delivery mismatch.",
+        "reasoning": "Both mechanical_power (z=+2.85) and Torque (z=+2.54) are significantly above their baselines while rotational speed is slightly below normal (z=-1.03). The taxonomy defines a Power Failure (PWF) as mechanical power falling outside process needs, either too low or too high. The observed high power and torque best fit this category. The notes label the readings as \"furthest from normal, though not individually abnormal,\" meaning they are unusual but not threshold\u2011violating, so confidence is moderate.",
+        "recommended_action": "Inspect the drive and control setpoints for the spindle/drive system. Verify that the torque command and speed setpoint match the intended process load. If the drive is oversupplying torque, reduce the torque limit or adjust the speed to bring mechanical power back within normal range. After adjustments, monitor mechanical_power, torque, and speed for at least one full production cycle to confirm the anomaly has resolved.",
+        "deviating_sensors": [
+          {
+            "sensor": "mechanical_power",
+            "value": 9125.447012735343,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 2.8484431981857465,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 63.7,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 2.5411888838087653,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Rotational speed [rpm]",
+            "value": 1368,
+            "baseline_mean": 1540.2600144912535,
+            "baseline_std": 167.39473403228345,
+            "z_score": -1.029064716325137,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "M19113",
+        "ml_probability": 0.9415984021354656,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "HDF",
+        "correct": true,
+        "confidence": "medium",
+        "llm_used": "groq",
+        "likely_cause": "Elevated air temperature combined with reduced rotational speed suggests the machine is not dissipating heat effectively.",
+        "reasoning": "The air temperature sensor is +1.32\u03c3 above its baseline while the rotational speed is -1.26\u03c3 below baseline. This pattern matches the Heat Dissipation Failure (HDF) description, which expects higher temperature relative to speed. Although none of the readings exceed individual thresholds (they are marked as 'furthest from normal, though not individually abnormal'), the concurrent direction of the deviations provides moderate evidence for HDF. No tool wear, torque, or power anomalies are present to support TWF, OSF, or PWF, and the signature is not absent enough for RNF.",
+        "recommended_action": "Check the machine's cooling system: verify that fans/air ducts are operating, clean any filters, ensure coolant flow is adequate, and confirm that airflow paths are unobstructed. After corrective actions, re\u2011monitor air temperature and spindle speed for return to baseline.",
+        "deviating_sensors": [
+          {
+            "sensor": "temp_differential",
+            "value": 8.399999999999977,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -1.6405660328801586,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Air temperature [K]",
+            "value": 302.6,
+            "baseline_mean": 299.9739985508747,
+            "baseline_std": 1.9907479694438195,
+            "z_score": 1.3191029147999078,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Rotational speed [rpm]",
+            "value": 1329,
+            "baseline_mean": 1540.2600144912535,
+            "baseline_std": 167.39473403228345,
+            "z_score": -1.262046955733448,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "M19287",
+        "ml_probability": 0.9307106293928132,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "Unclear",
+        "correct": false,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "The sensor deviations are modest and none cross defined abnormal thresholds. The largest deviation is a lower-than\u2011normal temperature differential (\u20112.35\u202f\u03c3), with a slight rise in air temperature (+1.22\u202f\u03c3) and torque (+0.98\u202f\u03c3). This pattern does not match the characteristic signatures of tool\u2011wear, heat\u2011dissipation, power, or over\u2011strain failures, so the failure mode cannot be confidently identified.",
+        "reasoning": "Heat\u2011dissipation failures usually show a clear rise in air/process temperature relative to speed, which is not present (air temperature is only mildly high and not flagged as abnormal). Tool\u2011wear failures tend to produce higher torque and higher temperature differentials, whereas the temperature differential is actually lower than normal. Power failures would manifest as a significant drop or surge in mechanical power (torque\u202f\u00d7\u202fspeed), but torque is only marginally elevated and speed data is absent. Over\u2011strain failures require a combination of high torque and high tool wear, which is not evident. Because the deviations are only the \"furthest from normal\" without crossing any alarm thresholds, the evidence is ambiguous, leading to an \"Unclear\" classification with low confidence.",
+        "recommended_action": "1. Schedule a short\u2011term visual inspection of the cutting tool for wear or damage. 2. Verify coolant flow and temperature\u2011differential sensor calibration. 3. Record air temperature, torque, and rotational speed over the next few production cycles to see if trends develop. 4. If any sensor begins to exceed its normal operating range, re\u2011evaluate for specific failure types (TWF, HDF, PWF, OSF).",
+        "deviating_sensors": [
+          {
+            "sensor": "temp_differential",
+            "value": 7.7000000000000455,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -2.3487656952417963,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Air temperature [K]",
+            "value": 302.4,
+            "baseline_mean": 299.9739985508747,
+            "baseline_std": 1.9907479694438195,
+            "z_score": 1.218638163324651,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 48.9,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 0.9787020988108032,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "M18795",
+        "ml_probability": 0.9332484253974138,
+        "real_types": [
+          "OSF"
+        ],
+        "error": null,
+        "predicted_failure_type": "OSF",
+        "correct": true,
+        "confidence": "high",
+        "llm_used": "groq",
+        "likely_cause": "Excessive mechanical load causing the tool/workpiece to be over\u2011strained",
+        "reasoning": "Both strain_proxy (z\u22483.15) and Torque [Nm] (z\u22483.02) are flagged as \"exceeded normal range\" in the positive direction, indicating the machine is experiencing higher-than\u2011normal strain and torque. Overstrain failures are characterized by this combination of elevated torque and strain, especially when the tool wear state is not directly measured. Mechanical power is also elevated (z\u22482.49) but was not flagged as a threshold breach, supporting the view that the primary issue is load\u2011induced overstrain rather than a pure power\u2011delivery fault.",
+        "recommended_action": "Immediately reduce the cutting load or feed rate, pause the operation and inspect the tool for signs of over\u2011strain or damage. Verify alignment and clamping of the workpiece, and consider replacing the tool if wear or deformation is observed. After corrective actions, restart the machine at reduced load and monitor strain and torque for return to normal ranges.",
+        "deviating_sensors": [
+          {
+            "sensor": "strain_proxy",
+            "value": 12753.4,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 3.1514256059968067,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 68.2,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 3.0162693251932806,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 8763.095716070298,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 2.4901741596457865,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L51935",
+        "ml_probability": 0.9858673847872917,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "Unclear",
+        "correct": false,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "The three sensors show modest deviations that do not cross any hard thresholds. Air temperature is slightly high while rotational speed is modestly low, which could hint at reduced cooling capacity, but the temperature differential is actually lower than normal, contradicting a clear heat\u2011up pattern. No torque or tool\u2011wear signals are present to support TWF, OSF, or PWF. The evidence is therefore ambiguous.",
+        "reasoning": "Air temperature (+1.72\u202f\u03c3) is above baseline, rotational speed (\u20111.47\u202f\u03c3) is below baseline, and temperature differential (\u20111.74\u202f\u03c3) is also below baseline. The detector flagged them as the \"furthest from normal, though not individually abnormal,\" meaning none of the readings exceed their normal ranges. Heat\u2011dissipation failure (HDF) would typically show high process/air temperature together with low speed *and* a rising temperature differential, which is not observed. The lack of torque or wear anomalies rules out OSF, TWF, and PWF. Because the pattern does not cleanly match any taxonomy entry, the safest classification is Unclear, with low confidence.",
+        "recommended_action": "Inspect the cooling system (fans, airflow paths) and verify that the air\u2011temperature sensor is calibrated. Monitor the rotational speed and air temperature over the next few cycles; if the speed remains low while air temperature stays elevated, consider increasing the speed set\u2011point or improving ventilation. Record any changes in tool wear or torque for future correlation.",
+        "deviating_sensors": [
+          {
+            "sensor": "temp_differential",
+            "value": 8.300000000000011,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -1.7417374132175107,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Air temperature [K]",
+            "value": 303.4,
+            "baseline_mean": 299.9739985508747,
+            "baseline_std": 1.9907479694438195,
+            "z_score": 1.7209619207008209,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Rotational speed [rpm]",
+            "value": 1295,
+            "baseline_mean": 1540.2600144912535,
+            "baseline_std": 167.39473403228345,
+            "z_score": -1.4651596772688984,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L47507",
+        "ml_probability": 0.9101189719759153,
+        "real_types": [
+          "OSF"
+        ],
+        "error": null,
+        "predicted_failure_type": "OSF",
+        "correct": true,
+        "confidence": "medium",
+        "llm_used": "groq",
+        "likely_cause": "Elevated mechanical load causing higher torque and strain on the tool/workpiece, indicative of an over\u2011strain condition.",
+        "reasoning": "All three deviating sensors (strain_proxy, mechanical_power, Torque) are above their baselines with the largest z\u2011score on strain_proxy. The pattern of simultaneous torque and strain increase aligns with the definition of Overstrain Failure (OSF), which expects higher torque together with higher mechanical strain. No temperature or tool\u2011wear specific sensor is flagged, making Heat Dissipation or Tool Wear less likely. The deviations are noted as \"furthest from normal, though not individually abnormal,\" so the evidence is suggestive but not definitive, leading to medium confidence.",
+        "recommended_action": "1. Pause the machine and inspect the cutting tool for wear or damage. 2. Reduce feed rate or cutting depth to lower load. 3. Verify workpiece fixturing and alignment. 4. Re\u2011calibrate or verify strain and torque sensor readings. 5. After adjustments, resume operation while closely monitoring strain, torque, and power for any further deviation.",
+        "deviating_sensors": [
+          {
+            "sensor": "strain_proxy",
+            "value": 11510.1,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 2.6926000109613333,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 8152.338688285906,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 1.8862979347233475,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 56.7,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 1.802174863877297,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "M19221",
+        "ml_probability": 0.9287478485365803,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "Unclear",
+        "correct": false,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "The observed deviations (moderately low temperature differential, elevated strain proxy, slight rise in air temperature) do not match any single failure pattern in the taxonomy.",
+        "reasoning": "All three sensors are flagged only as 'furthest from normal, though not individually abnormal'. No clear threshold breach in temperature, torque, speed, or tool wear that would point to TWF, HDF, PWF, or OSF. The pattern is ambiguous, so the safest classification is Unclear.",
+        "recommended_action": "Schedule a manual inspection of the tool for wear, verify coolant flow and heat\u2011dissipation components, and check torque and speed logs for any hidden anomalies. Continue to monitor the three deviating sensors for trending beyond normal limits.",
+        "deviating_sensors": [
+          {
+            "sensor": "temp_differential",
+            "value": 8.0,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -2.0452515542296825,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "strain_proxy",
+            "value": 8001.200000000001,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 1.3976807393294088,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Air temperature [K]",
+            "value": 302.1,
+            "baseline_mean": 299.9739985508747,
+            "baseline_std": 1.9907479694438195,
+            "z_score": 1.067941036111823,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L52013",
+        "ml_probability": 0.6451859181896897,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "Unclear",
+        "correct": false,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "Slightly elevated air and process temperatures with a lower temperature differential, but none exceed abnormal thresholds; no torque or wear indicators present.",
+        "reasoning": "All deviating sensors are flagged only as \"furthest from normal, though not individually abnormal\" with z-scores between 1.28 and 1.72. The pattern does not match the characteristic signatures of Tool Wear, Heat Dissipation, Power, or Overstrain failures, and there is insufficient evidence for a random failure signature. Therefore the evidence is ambiguous, leading to an Unclear classification.",
+        "recommended_action": "Continue monitoring temperature and differential readings; verify cooling airflow and rotational speed are within spec. If temperatures trend upward or exceed thresholds, schedule a cooling system inspection and consider a detailed tool wear check.",
+        "deviating_sensors": [
+          {
+            "sensor": "Air temperature [K]",
+            "value": 303.4,
+            "baseline_mean": 299.9739985508747,
+            "baseline_std": 1.9907479694438195,
+            "z_score": 1.7209619207008209,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "temp_differential",
+            "value": 8.5,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -1.5393946525427489,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Process temperature [K]",
+            "value": 311.9,
+            "baseline_mean": 309.9955698167891,
+            "baseline_std": 1.4868460647646984,
+            "z_score": 1.2808522874977402,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L57010",
+        "ml_probability": 0.8641471155313388,
+        "real_types": [
+          "OSF"
+        ],
+        "error": null,
+        "predicted_failure_type": "OSF",
+        "correct": true,
+        "confidence": "medium",
+        "llm_used": "groq",
+        "likely_cause": "Elevated mechanical strain and torque indicate the tool or workpiece is being loaded beyond its normal capacity, producing higher strain_proxy and torque readings together with increased mechanical power.",
+        "reasoning": "All three deviating sensors (strain_proxy, Torque, mechanical_power) are above their baseline means with positive z\u2011scores (2.71, 1.74, 1.59). The pattern of concurrent upward deviations in strain and torque matches the definition of Overstrain Failure (OSF), which describes higher torque combined with higher accumulated strain. No temperature or clear wear\u2011time signals are present, so other categories are less consistent. Although none of the values cross a hard threshold (notes indicate \"furthest from normal, though not individually abnormal\"), the consistent directional shift gives moderate evidence for OSF.",
+        "recommended_action": "Inspect the cutting tool for excessive wear or damage, verify the workpiece material hardness, and reduce the cutting load \u2013 e.g., lower feed rate or increase spindle speed to bring torque and strain back to nominal levels. If the tool shows significant wear, replace it before the next run.",
+        "deviating_sensors": [
+          {
+            "sensor": "strain_proxy",
+            "value": 11556.6,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 2.709760302258003,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 56.1,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 1.738830805026028,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 7854.578536578664,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 1.5918923558017444,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L48515",
+        "ml_probability": 0.9648793654889272,
+        "real_types": [
+          "OSF"
+        ],
+        "error": null,
+        "predicted_failure_type": "OSF",
+        "correct": true,
+        "confidence": "medium",
+        "llm_used": "groq",
+        "likely_cause": "Elevated tool wear together with higher-than\u2011normal torque is causing the workpiece/tool assembly to experience excessive mechanical strain, as reflected by the high strain_proxy reading.",
+        "reasoning": "All three deviating sensors point in the same direction (above baseline). The tool\u2011wear sensor shows a ~2\u03c3 increase, torque is ~1.5\u03c3 above its mean, and the strain proxy is ~3\u03c3 high. Although none of the values individually crossed a hard alarm threshold (they are only the \"furthest from normal\"), the pattern of simultaneous wear, torque, and strain elevation matches the definition of an Overstrain Failure (OSF): a combination of high torque and accumulated wear that pushes the system beyond its safe strain limits. Heat\u2011related or pure power\u2011deficit signatures are absent, and the evidence is stronger than a random, uncorrelated anomaly, leading to a medium\u2011confidence classification.",
+        "recommended_action": "1. Stop the machine and inspect the cutting tool for wear; replace if wear exceeds the prescribed limit. 2. Verify torque settings and reduce if they exceed recommended values for the current tool condition. 3. Check workpiece fixturing and alignment to ensure load is evenly distributed. 4. After corrective actions, restart the machine and monitor strain_proxy, tool wear, and torque for a minimum of one production cycle to confirm the anomaly has resolved. If strain remains high, consider adjusting feed rate or using a tool with higher strength rating.",
+        "deviating_sensors": [
+          {
+            "sensor": "strain_proxy",
+            "value": 12266.4,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 2.97170384553491,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Tool wear [min]",
+            "value": 228,
+            "baseline_mean": 106.69371700652107,
+            "baseline_std": 62.94579046389409,
+            "z_score": 1.9271548120928055,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 53.8,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 1.4960119127628309,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L54460",
+        "ml_probability": 0.963640197832885,
+        "real_types": [
+          "PWF"
+        ],
+        "error": null,
+        "predicted_failure_type": "PWF",
+        "correct": true,
+        "confidence": "high",
+        "llm_used": "groq",
+        "likely_cause": "The drive is delivering more mechanical power than normal, indicated by significantly elevated torque and power readings, while speed is modestly reduced but not abnormal.",
+        "reasoning": "Both Torque [Nm] (z\u2011score\u202f3.16) and mechanical_power (z\u2011score\u202f3.11) are flagged as \"exceeded normal range\" \u2013 clear threshold violations showing a high\u2011load condition. Rotational speed is only slightly below its mean (z\u202f\u20111.51) and marked as \"furthest from normal, though not individually abnormal,\" suggesting the machine is operating under a heavier load rather than a speed\u2011related issue. This pattern matches the Power Failure (PWF) category, which covers situations where delivered mechanical power is outside the process requirement, especially an overload scenario.",
+        "recommended_action": "1. Immediately reduce the machine load or pause operation. 2. Verify drive set\u2011points and control parameters for power/torque limits. 3. Inspect the drive and motor for signs of over\u2011current or overheating. 4. Check the tool for excessive wear as a secondary cause, but prioritize confirming the power overload. 5. After corrective adjustments, monitor torque and power to ensure they return to baseline ranges before resuming production.",
+        "deviating_sensors": [
+          {
+            "sensor": "Torque [Nm]",
+            "value": 69.6,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 3.1640721291795733,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 9387.581503750875,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 3.107624475936521,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "Rotational speed [rpm]",
+            "value": 1288,
+            "baseline_mean": 1540.2600144912535,
+            "baseline_std": 167.39473403228345,
+            "z_score": -1.506977002290903,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "M21478",
+        "ml_probability": 0.8240801930190749,
+        "real_types": [
+          "PWF"
+        ],
+        "error": null,
+        "predicted_failure_type": "PWF",
+        "correct": true,
+        "confidence": "medium",
+        "llm_used": "groq",
+        "likely_cause": "Mechanical power is significantly above baseline while torque is elevated and rotational speed is reduced, indicating the machine is delivering more power than the process normally requires.",
+        "reasoning": "The deviation evidence shows torque (+2.76\u03c3) and mechanical_power (+2.74\u03c3) as the furthest from normal, with rotational speed below baseline (-1.38\u03c3). Although none of the individual readings crossed a hard threshold, the combination suggests an over\u2011power condition rather than a temperature or wear\u2011specific issue. This pattern aligns best with the Power Failure (PWF) category, which covers situations where delivered power is outside the expected range. The lack of temperature or tool\u2011wear sensor data reduces confidence.",
+        "recommended_action": "Inspect the drive and load settings for over\u2011power conditions: verify torque set\u2011points, check for unexpected load increase, and confirm that the motor controller is not commanding excess power. If needed, reduce torque or speed set\u2011points, and monitor the machine after adjustment to ensure power returns to normal levels.",
+        "deviating_sensors": [
+          {
+            "sensor": "Torque [Nm]",
+            "value": 65.8,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 2.762893089788205,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "mechanical_power",
+            "value": 9019.742891917558,
+            "baseline_mean": 6244.547534104533,
+            "baseline_std": 1011.3943927215175,
+            "z_score": 2.7439299424484367,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Rotational speed [rpm]",
+            "value": 1309,
+            "baseline_mean": 1540.2600144912535,
+            "baseline_std": 167.39473403228345,
+            "z_score": -1.3815250272248893,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L51841",
+        "ml_probability": 0.9847604394641574,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "Unclear",
+        "correct": false,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "The sensor deviations are modest and contradictory \u2013 air temperature is slightly high, but tool wear is unusually low and the temperature differential is below baseline. No clear pattern matches any single failure category.",
+        "reasoning": "Tool wear is below its normal mean, which contradicts a Tool Wear Failure. Air temperature is only modestly above baseline and the temperature differential is below baseline, which does not strongly indicate Heat Dissipation Failure. No torque, speed, or power data are present to support Power or Overstrain failures, and the deviations are flagged as \"furthest from normal, though not individually abnormal,\" meaning none crossed a critical threshold. The overall signature is therefore ambiguous and best classified as Unclear.",
+        "recommended_action": "Verify sensor calibrations and review recent maintenance logs. Conduct a visual inspection of the cooling system and tool condition. Continue monitoring the temperature, tool wear, and any torque/speed readings for emerging trends before scheduling corrective maintenance.",
+        "deviating_sensors": [
+          {
+            "sensor": "temp_differential",
+            "value": 8.0,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -2.0452515542296825,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Air temperature [K]",
+            "value": 303.3,
+            "baseline_mean": 299.9739985508747,
+            "baseline_std": 1.9907479694438195,
+            "z_score": 1.670729544963221,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Tool wear [min]",
+            "value": 32,
+            "baseline_mean": 106.69371700652107,
+            "baseline_std": 62.94579046389409,
+            "z_score": -1.1866356186179856,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "H33243",
+        "ml_probability": 0.9454456738866003,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "Unclear",
+        "correct": false,
+        "confidence": "low",
+        "llm_used": "groq",
+        "likely_cause": "The three sensors show modest deviations (air temperature +1.2\u03c3, rotational speed \u20131.0\u03c3, temperature differential \u20131.4\u03c3) that are only the furthest from normal but not threshold violations, providing no clear signature of any specific failure mode.",
+        "reasoning": "Heat Dissipation Failure would manifest as a clear temperature rise together with a significant speed drop, but the temperature rise is slight and the speed reduction is modest. Tool Wear, Power, and Overstrain failures all require torque or wear data, which are absent. The pattern is therefore ambiguous and does not satisfy the defining characteristics of any taxonomy entry, so the safest classification is Unclear. The evidence is weak, leading to low confidence.",
+        "recommended_action": "1. Verify air\u2011cooling system operation (check fans, coolant flow, filter cleanliness). 2. Re\u2011measure air temperature and rotational speed over the next few cycles to see if the trend persists or worsens. 3. Perform a quick visual inspection of the cutting tool for wear and check torque readings if available. 4. If temperature continues to rise or speed drops further, consider a detailed heat\u2011dissipation audit; otherwise, resume normal monitoring.",
+        "deviating_sensors": [
+          {
+            "sensor": "temp_differential",
+            "value": 8.599999999999966,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -1.4382232722053967,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Air temperature [K]",
+            "value": 302.3,
+            "baseline_mean": 299.9739985508747,
+            "baseline_std": 1.9907479694438195,
+            "z_score": 1.168405787587051,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Rotational speed [rpm]",
+            "value": 1366,
+            "baseline_mean": 1540.2600144912535,
+            "baseline_std": 167.39473403228345,
+            "z_score": -1.041012523474281,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L55617",
+        "ml_probability": 0.9801769914360066,
+        "real_types": [
+          "OSF"
+        ],
+        "error": null,
+        "predicted_failure_type": "OSF",
+        "correct": true,
+        "confidence": "high",
+        "llm_used": "groq",
+        "likely_cause": "Excessive mechanical strain on the tool/workpiece, indicated by a strain proxy far above its normal range combined with elevated torque and reduced rotational speed.",
+        "reasoning": "The strain_proxy sensor exceeded its normal range (z\u2011score\u202f=\u202f3.38, note\u202f=\u202f'exceeded normal range'), which directly signals over\u2011strain. Torque is also high (z\u2011score\u202f\u2248\u202f2.77) while speed is unusually low (z\u2011score\u202f\u2248\u202f\u20112.15). This pattern matches the Overstrain Failure (OSF) description: higher torque together with higher strain than the tool\u2019s wear state can tolerate. No temperature data is present to support Heat Dissipation Failure, and the power estimate (torque\u202f\u00d7\u202fspeed) does not clearly indicate a power deficit or excess, making OSF the most consistent category.",
+        "recommended_action": "Inspect the cutting tool for signs of overload or damage, replace if wear is evident. Reduce the feed load or increase spindle speed to lower the mechanical strain. Verify workpiece setup and alignment. After corrective adjustments, monitor strain, torque, and speed for return to baseline before resuming production.",
+        "deviating_sensors": [
+          {
+            "sensor": "strain_proxy",
+            "value": 13377.7,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 3.3818163555991916,
+            "direction": "above",
+            "note": "exceeded normal range"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 65.9,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 2.773450432930084,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Rotational speed [rpm]",
+            "value": 1181,
+            "baseline_mean": 1540.2600144912535,
+            "baseline_std": 167.39473403228345,
+            "z_score": -2.146184684770115,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      },
+      {
+        "entity_id": "L51898",
+        "ml_probability": 0.873412934503218,
+        "real_types": [
+          "HDF"
+        ],
+        "error": null,
+        "predicted_failure_type": "OSF",
+        "correct": false,
+        "confidence": "medium",
+        "llm_used": "groq",
+        "likely_cause": "Emerging over\u2011strain condition \u2013 torque and strain proxy are elevated while temperature differential is lower, indicating the tool/workpiece is experiencing higher mechanical load than normal.",
+        "reasoning": "The deviating sensors show strain_proxy 2.36\u202f\u03c3 above its mean and Torque 1.81\u202f\u03c3 above its mean, both flagged as the furthest from normal though not crossing hard thresholds. Over\u2011strain Failure (OSF) is defined by higher torque together with higher mechanical strain for the current wear state. The low temp_differential (\u20111.74\u202f\u03c3) argues against a heat\u2011dissipation issue, and there is no evidence of power loss or random failure. Thus the pattern best matches OSF, though the deviations are moderate, giving only medium confidence.",
+        "recommended_action": "Stop the machine, inspect the cutting tool for wear or damage, verify workpiece alignment and load settings, reduce feed or replace the tool as needed, then restart and closely monitor strain and torque to confirm they return to baseline.",
+        "deviating_sensors": [
+          {
+            "sensor": "strain_proxy",
+            "value": 10621.6,
+            "baseline_mean": 4213.842707794224,
+            "baseline_std": 2709.744210986915,
+            "z_score": 2.3647092837120627,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "Torque [Nm]",
+            "value": 56.8,
+            "baseline_mean": 39.62965531518477,
+            "baseline_std": 9.472080111077105,
+            "z_score": 1.8127322070191745,
+            "direction": "above",
+            "note": "furthest from normal, though not individually abnormal"
+          },
+          {
+            "sensor": "temp_differential",
+            "value": 8.300000000000011,
+            "baseline_mean": 10.0215712659145,
+            "baseline_std": 0.9884218211367646,
+            "z_score": -1.7417374132175107,
+            "direction": "below",
+            "note": "furthest from normal, though not individually abnormal"
+          }
+        ]
+      }
+    ],
+    "provider_selected": "groq",
+    "provider_probe_log": [
+      {
+        "provider": "gemini",
+        "outcome": "unavailable",
+        "error": "ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}"
+      },
+      {
+        "provider": "groq",
+        "outcome": "available"
+      }
+    ]
   }
 }

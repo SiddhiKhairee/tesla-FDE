@@ -41,20 +41,19 @@ from sensor_adapter import DEFAULT_K_PER_COLUMN, compute_baselines, load_ml_gate
 # ask — so these examples are directly comparable to the numbers already
 # reported, not a fresh, differently-distributed sample.
 SAMPLE_SIZE = None  # None = full test split (2000 rows) — matches ml_detector.py's reported 72 ML-flagged rows
-EXAMPLES_TO_PRINT = 3
 
-# The two ML-only-catch rows that came back with an empty description in
-# the previous dry run — explicitly re-shown this time (in addition to
-# whatever the general picks logic below selects) so the fix's effect on
-# these exact rows is directly visible, not just "some similar row."
-MUST_SHOW_ENTITY_IDS = {"H30587", "L49195"}
+# Categorized spot-check counts. "obvious" = exactly one raw/derived column
+# crossed its own threshold (a single clean signal), ranked by how extreme
+# that one crossing is — the easiest possible case for either gate.
+CATEGORY_COUNTS = {"both_agree": 3, "ml_only": 3, "zscore_only": 2, "obvious": 2}
 
 
-def _print_context_bundle(index: int, row_result: dict, context: dict) -> None:
+def _print_context_bundle(label: str, index: int, row_result: dict, context: dict, would_notify: bool) -> None:
     print(f"\n{'=' * 70}")
-    print(f"Example {index}: entity_id={row_result['entity_id']}  "
+    print(f"[{label}] Example {index}: entity_id={row_result['entity_id']}  "
           f"ml_probability={row_result['ml_probability']:.3f}  "
-          f"zscore_flagged={row_result['zscore_flagged']}")
+          f"zscore_flagged={row_result['zscore_flagged']}  "
+          f"would_notify_in_production={would_notify}")
     print("-" * 70)
     if not context["deviating_sensors"]:
         # Should be unreachable post-fix — printed loudly rather than
@@ -72,6 +71,38 @@ def _print_context_bundle(index: int, row_result: dict, context: dict) -> None:
     print("  Full taxonomy descriptions (as the agent would see them):")
     for code, info in context["failure_taxonomy"].items():
         print(f"    {code} ({info['name']}): {info['description']}")
+
+
+def _pick_categorized(results: list[dict]) -> dict[str, list[dict]]:
+    """Picks CATEGORY_COUNTS examples per bucket, avoiding reusing the same
+    row across buckets where enough distinct candidates exist (falls back
+    to reuse, noted at print time, only if a bucket would otherwise come up
+    short). "obvious" is selected first and specifically, rather than being
+    whatever's left over from the other buckets, since it's a property
+    (exactly one clean signal) worth searching for deliberately.
+    """
+    used_ids: set[str] = set()
+
+    def take(pool: list[dict], n: int) -> list[dict]:
+        chosen = [r for r in pool if r["entity_id"] not in used_ids][:n]
+        used_ids.update(r["entity_id"] for r in chosen)
+        return chosen
+
+    obvious_pool = sorted(
+        (r for r in results if r["flagged"] and r["zscore_flagged"] and len(r["deviations"]) == 1),
+        key=lambda r: abs(r["deviations"][0]["z_score"]),
+        reverse=True,
+    )
+    both_pool = [r for r in results if r["flagged"] and r["zscore_flagged"]]
+    only_ml_pool = [r for r in results if r["flagged"] and not r["zscore_flagged"]]
+    only_zscore_pool = [r for r in results if r["zscore_flagged"] and not r["flagged"]]
+
+    return {
+        "obvious": take(obvious_pool, CATEGORY_COUNTS["obvious"]),
+        "both_agree": take(both_pool, CATEGORY_COUNTS["both_agree"]),
+        "ml_only": take(only_ml_pool, CATEGORY_COUNTS["ml_only"]),
+        "zscore_only": take(only_zscore_pool, CATEGORY_COUNTS["zscore_only"]),
+    }
 
 
 def main() -> None:
@@ -103,33 +134,25 @@ def main() -> None:
     print(f"  ML-flagged rows with an EMPTY description: {len(empty_description)} / {len(ml_flagged)}"
           f"  (should be 0 post-fix)")
 
-    if not ml_flagged:
-        print("\nNo ML-flagged rows in this sample — nothing to print a context bundle for.")
-        return
+    picks = _pick_categorized(results)
 
-    # Pick a mix worth eyeballing: one where both gates agree (the
-    # straightforward case), one where ML flagged but z-score found nothing
-    # under the old threshold-only view (the honest edge case), plus the
-    # two specific rows that came back empty last time — rather than just
-    # the first N in row order.
-    picks = []
-    if both:
-        picks.append(both[0])
-    if only_ml:
-        picks.append(only_ml[0])
-    for r in ml_flagged:
-        if r["entity_id"] in MUST_SHOW_ENTITY_IDS and r not in picks:
-            picks.append(r)
-    for r in ml_flagged:
-        if len(picks) >= EXAMPLES_TO_PRINT and not (MUST_SHOW_ENTITY_IDS - {p["entity_id"] for p in picks}):
-            break
-        if r not in picks:
-            picks.append(r)
+    labels = {
+        "both_agree": "BOTH AGREE (ML + z-score)",
+        "ml_only": "ML-ONLY CATCH",
+        "zscore_only": "Z-SCORE-ONLY (no notification in production — ML disagreed)",
+        "obvious": "OBVIOUS (single clean signal, easiest case)",
+    }
 
-    print(f"\nPrinting {len(picks)} example context bundle(s) — no LLM/diagnosis-agent call made.")
-    for i, row_result in enumerate(picks, start=1):
-        context = gather_sensor_context(row_result["entity_id"], row_result["ranked_deviations"])
-        _print_context_bundle(i, row_result, context)
+    print(f"\nCategorized spot-check — no LLM/diagnosis-agent call made.")
+    for category, requested_n in CATEGORY_COUNTS.items():
+        rows = picks[category]
+        print(f"\n{'#' * 70}\n# {labels[category]} — showing {len(rows)}/{requested_n}\n{'#' * 70}")
+        if not rows:
+            print("  (no candidates found in this sample for this category)")
+            continue
+        for i, row_result in enumerate(rows, start=1):
+            context = gather_sensor_context(row_result["entity_id"], row_result["ranked_deviations"])
+            _print_context_bundle(category, i, row_result, context, would_notify=row_result["flagged"])
 
 
 if __name__ == "__main__":

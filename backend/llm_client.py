@@ -17,7 +17,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +34,40 @@ supported by the event or context. If the context suggests a systemic issue \
 let it inform your confidence and recommended action. Keep the recommended \
 action concrete enough that someone on the floor or in supply chain could \
 act on it directly."""
+
+# Version A (sensor path) only. SYSTEM_PROMPT above is written for the ERP/
+# human-report paths (explicitly "reconciliation assistant for a
+# manufacturing ERP system") and never mentions sensor readings, the
+# failure taxonomy, or predicted_failure_type — using it unmodified for a
+# sensor row would leave the model with no instruction to actually
+# classify into TWF/HDF/PWF/OSF/RNF/Unclear, wasting real API calls on an
+# uninstructed request. Selected automatically (see _select_system_prompt)
+# whenever the context passed to generate() carries a "failure_taxonomy"
+# key — a reliable signal this is a sensor-path call, since the ERP/
+# human-report context-gathering never produces that key.
+SENSOR_SYSTEM_PROMPT = """You are a predictive-maintenance assistant for industrial \
+sensor telemetry (temperature, rotational speed, torque, tool wear, and derived \
+composite readings such as mechanical power and strain). You are given one flagged \
+sensor reading plus the deviation evidence a statistical detector already computed \
+(which sensors were off, by how much, in which direction) and a fixed taxonomy of \
+five known failure categories plus an "Unclear" fallback.
+
+Classify the most likely failure category using only the deviation evidence and the \
+taxonomy provided — do not invent sensor readings or failure mechanisms that aren't \
+supported by the evidence. Set `predicted_failure_type` to the taxonomy code (TWF, \
+HDF, PWF, OSF, or RNF) that best matches the evidence, or `Unclear` if the evidence \
+doesn't cleanly fit any one category — do not force a best guess into one of the \
+five when it doesn't fit. Each deviation's `note` distinguishes an actual threshold \
+violation ("exceeded normal range") from a reading that's merely the most unusual \
+among several that never crossed anything ("furthest from normal, though not \
+individually abnormal") — that distinction is real evidence about how much the data \
+actually supports any conclusion, and should inform your own self-reported \
+confidence, not just your choice of category. Keep the recommended action concrete \
+enough that a maintenance technician could act on it directly."""
+
+
+def _select_system_prompt(context: dict) -> str:
+    return SENSOR_SYSTEM_PROMPT if "failure_taxonomy" in context else SYSTEM_PROMPT
 
 
 class DiagnosisReport(BaseModel):
@@ -65,13 +99,22 @@ class DiagnosisReport(BaseModel):
 
 
 class _DiagnosisReportFields(BaseModel):
-    """Same four fields as DiagnosisReport, minus `llm_used`, all required.
+    """Same fields as DiagnosisReport, minus `llm_used`, all required.
     Groq's strict structured-output mode requires every schema property to
     be required (and disallows additionalProperties) — DiagnosisReport
     itself can't be used as-is because `llm_used` is optional. Groq
     responses are parsed against this narrower schema, then used to build
     a full DiagnosisReport with `llm_used` set host-side, same as every
     other provider.
+
+    `predicted_failure_type` is required here (unlike on DiagnosisReport
+    itself, where it's optional) purely because Groq's strict mode forces
+    every declared property to be required — it was missed when this field
+    was first added to DiagnosisReport, which meant Groq was never actually
+    asked to produce it at all and every Groq-generated report silently
+    carried `predicted_failure_type=None` regardless of what the model's
+    own reasoning concluded. Fixed here; see the field's description for
+    how a non-sensor (ERP/human-report) call is expected to fill it.
     """
 
     model_config = {"extra": "forbid"}
@@ -80,6 +123,14 @@ class _DiagnosisReportFields(BaseModel):
     reasoning: str
     confidence: Literal["low", "medium", "high"]
     recommended_action: str
+    predicted_failure_type: Literal["TWF", "HDF", "PWF", "OSF", "RNF", "Unclear"] = Field(
+        description=(
+            "Version A (sensor) field — classify into this taxonomy only when "
+            "the context includes a failure_taxonomy block. For every other "
+            "kind of diagnosis (ERP/human-report), set this to 'Unclear' — it "
+            "has no meaning outside the sensor path and nothing there reads it."
+        )
+    )
 
 
 class DiagnosisLLM(ABC):
@@ -98,7 +149,7 @@ class AnthropicDiagnosisLLM(DiagnosisLLM):
         response = self._client.messages.parse(
             model=self._model,
             max_tokens=2000,
-            system=SYSTEM_PROMPT,
+            system=_select_system_prompt(context),
             messages=[
                 {
                     "role": "user",
@@ -129,7 +180,7 @@ class GeminiDiagnosisLLM(DiagnosisLLM):
             model=self._model,
             contents=payload,
             config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
+                system_instruction=_select_system_prompt(context),
                 temperature=0,
                 response_mime_type="application/json",
                 response_schema=DiagnosisReport,
@@ -170,7 +221,7 @@ class GroqDiagnosisLLM(DiagnosisLLM):
             model=self._model,
             temperature=0,
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": _select_system_prompt(context)},
                 {"role": "user", "content": payload},
             ],
             response_format={
