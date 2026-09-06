@@ -1,0 +1,19 @@
+venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.env
+.git
+
+# Runtime ticket store — gitignored local state, meant to be a
+# docker-compose volume mount, not baked into the image.
+data/tickets.json
+
+# Tests aren't needed in the runtime image.
+tests/
+conftest.py
+test_odoo_connection.py
+
+*.log

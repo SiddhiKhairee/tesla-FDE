@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Runtime ticket store (see backend/ticket_store.py) — local persisted
+# state, not source, same reasoning as db.sqlite3 above.
+backend/data/tickets.json

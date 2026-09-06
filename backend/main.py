@@ -28,6 +28,7 @@ from odoo_fetch import (
 )
 from order_lookup import build_order_index
 from schemas import FailureReportIn
+from ticket_store import list_tickets, save_ticket
 
 app = FastAPI(title="Tesla FDE ERP Reconciliation Agent")
 
@@ -143,10 +144,14 @@ def run_pipeline():
     detection -> shared event schema -> LangGraph diagnosis agent. Runs on
     the free stub LLM (see llm_client.get_diagnosis_llm) until a real
     provider is configured — swapping providers only touches llm_client.py.
+    Each diagnosed event is persisted as a ticket (see ticket_store.py) so
+    the dashboard has a durable list to read instead of re-running this
+    live on every page load.
     """
     snapshot = _fetch_snapshot()
     events = _detect_all_events(snapshot)
-    return diagnose_all(events, order_index=_build_order_index(snapshot))
+    diagnoses = diagnose_all(events, order_index=_build_order_index(snapshot))
+    return [save_ticket(diagnosis) for diagnosis in diagnoses]
 
 
 @app.post("/reports/intake")
@@ -154,12 +159,23 @@ def submit_failure_report(report: FailureReportIn):
     """Version B: a human on the floor reports a problem directly. Adapts
     the report into the shared DiscrepancyEvent schema, matches it against
     historical_incidents.py's past-incident store, runs it through the same
-    diagnosis engine Day 3 built for ERP anomalies, and auto-notifies the
-    team — replacing the "someone has to type it into Slack" step Astin
-    confirmed is today's actual process.
+    diagnosis engine Day 3 built for ERP anomalies, persists it as a ticket,
+    and auto-notifies the team — replacing the "someone has to type it into
+    Slack" step Astin confirmed is today's actual process.
     """
     event = report_to_event(report)
     matches = find_similar_incidents(report.machine, report.issue, _HISTORICAL_INCIDENTS)
     diagnosis = diagnose_event(event, historical_matches=matches)
+    ticket = save_ticket(diagnosis)
     notified = notify_ticket(diagnosis)
-    return {**diagnosis, "notified": notified}
+    return {**ticket, "notified": notified}
+
+
+@app.get("/tickets")
+def get_tickets():
+    """Every persisted ticket from both paths — ERP anomalies (/pipeline/run)
+    and Version B human reports (/reports/intake) — in one list, since both
+    already share the same {event, context, report} shape. This is what the
+    dashboard reads; it never triggers a live pipeline run itself.
+    """
+    return list_tickets()
