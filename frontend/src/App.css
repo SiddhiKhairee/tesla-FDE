@@ -1,3 +1,31 @@
+.tab-nav {
+  display: flex;
+  gap: 4px;
+  padding: 16px 32px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-nav button {
+  font: inherit;
+  color: var(--text);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 4px;
+  margin-right: 20px;
+  cursor: pointer;
+}
+
+.tab-nav button:hover {
+  color: var(--text-h);
+}
+
+.tab-nav button.active {
+  color: var(--text-h);
+  border-bottom-color: var(--accent);
+  font-weight: 500;
+}
+
 .dashboard {
   text-align: left;
   padding: 24px 32px 48px;
@@ -130,4 +158,57 @@
   background: rgba(230, 160, 20, 0.12);
   border-color: rgba(230, 160, 20, 0.4);
   color: #b57a05;
+}
+
+.report-form {
+  display: flex;
+  flex-direction: column;
+  max-width: 520px;
+  margin-top: 24px;
+  gap: 6px;
+}
+
+.report-form label {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 12px;
+}
+
+.report-form input,
+.report-form textarea {
+  font: inherit;
+  color: var(--text-h);
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.report-form input:focus,
+.report-form textarea:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.report-form button[type='submit'] {
+  font: inherit;
+  color: var(--text-h);
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 16px;
+  margin-top: 20px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.report-form button[type='submit']:hover:not(:disabled) {
+  border-color: var(--accent-border);
+}
+
+.report-form button[type='submit']:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }

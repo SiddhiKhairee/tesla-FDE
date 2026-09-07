@@ -1,0 +1,97 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+    volumes:
+      - odoo-db-data:/var/lib/postgresql/data
+    networks:
+      - tesla-fde
+    restart: unless-stopped
+
+  odoo:
+    image: odoo:17.0
+    depends_on:
+      - db
+    ports:
+      - "8069:8069"
+    environment:
+      HOST: db
+      USER: odoo
+      PASSWORD: odoo
+    volumes:
+      - odoo-web-data:/var/lib/odoo
+      - ./odoo/addons:/mnt/extra-addons
+    networks:
+      - tesla-fde
+    restart: unless-stopped
+    # Odoo takes real time to boot, and backend/odoo_client.py connects at
+    # import time with no lazy-connect fallback — it crash-loops if it
+    # starts before Odoo is actually serving requests, not just "started".
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8069/web/login"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env
+    environment:
+      # Overrides .env's ODOO_URL (http://localhost:8069, a local-dev-only
+      # value) — inside the compose network Odoo is reachable by service
+      # name, not host.docker.internal (that was only a manual workaround
+      # for testing the backend container in isolation).
+      ODOO_URL: http://odoo:8069
+    depends_on:
+      odoo:
+        condition: service_healthy
+    volumes:
+      # backend/data/tickets.json is gitignored runtime state (see
+      # ticket_store.py) — bind-mounting the whole directory keeps it
+      # (and the committed historical_incidents.json) surviving a
+      # `docker-compose down && up`, not just the container's own writable
+      # layer.
+      - ./backend/data:/app/data
+    networks:
+      - tesla-fde
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - backend
+    ports:
+      # 5173/5174/8000/8001 are already in use by other things on this
+      # machine (see frontend/.env.local.example) — 5175 is free.
+      - "5175:80"
+    networks:
+      - tesla-fde
+    restart: unless-stopped
+
+networks:
+  tesla-fde:
+
+volumes:
+  # External: these are the exact volumes odoo/docker-compose.yml created
+  # back on Day 1/2 (see `docker volume ls` -> odoo_odoo-db-data,
+  # odoo_odoo-web-data — Compose prefixes volume names with the project
+  # name, "odoo", from that file's directory). Referencing them here by
+  # their real name instead of letting this file create its own
+  # differently-prefixed volumes is what keeps the already-seeded
+  # entities and synthetic data intact rather than starting Odoo against
+  # an empty database.
+  odoo-db-data:
+    external: true
+    name: odoo_odoo-db-data
+  odoo-web-data:
+    external: true
+    name: odoo_odoo-web-data
