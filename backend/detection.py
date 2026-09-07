@@ -125,7 +125,13 @@ def detect_duplicate_orders(
             continue
         candidates.append((order, date_order, partner_id, signature(order["id"])))
 
-    candidates.sort(key=lambda c: c[1])
+    # Sort by date_order, then by record id as a deterministic tiebreak for
+    # same-timestamp orders (a real duplicate_entry anomaly gives the copy
+    # the exact same date_order as the original) — without this, which
+    # record ends up "entity_id" (the original) vs "duplicate_of" isn't
+    # stable, since the lower-id/earlier-created record is always the true
+    # original but a same-date sort alone doesn't guarantee that ordering.
+    candidates.sort(key=lambda c: (c[1], c[0]["id"]))
 
     events = []
     flagged_ids = set()

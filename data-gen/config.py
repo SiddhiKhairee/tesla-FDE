@@ -65,17 +65,39 @@ PRODUCT_SUPPLIER = {
 }
 
 # --- Simulation window ---
-SIMULATION_MONTHS = 3  # how far back the generated history stretches, ending "today"
+# Bumped from 3 -> 8 months (post-Day-2 fix): a full Odoo wipe-and-reseed
+# after the original Day 2 spot-check produced a much smaller run (only ~13
+# total anomalies, 0 of them duplicate_entry) than what was originally
+# approved, purely from random luck on a small sample — see
+# data-gen/GROUND_TRUTH_NOTES.md. 3 months' worth of orders at the old
+# ANOMALY_RATE gave too few draws for every type to reliably clear even one
+# example, let alone enough for a meaningful eval. 8 months + the ANOMALY_RATE
+# bump below is sized (see that file) to comfortably clear ~10+ expected
+# stuck_order/delayed_delivery examples even after typical live-Odoo skip/
+# failure attrition.
+SIMULATION_MONTHS = 8  # how far back the generated history stretches, ending "today"
 
 # --- Anomaly injection ---
-ANOMALY_RATE = 0.08  # fraction of generated orders that get an anomaly injected
+ANOMALY_RATE = 0.12  # fraction of generated orders that get an anomaly injected — bumped from 0.08, see above
 RANDOM_SEED = 42  # fixed seed so a run is reproducible; change for a fresh dataset
 
 # quantity_mismatch anomalies are injected as a separate pass at the very end
 # of the simulated window (see generate.py's inject_quantity_mismatches), one
 # per distinct product/location so they don't collide on the same quant.
-# Capped at 5 — the number of distinct product/location combos available.
-QUANTITY_MISMATCH_COUNT = 4
+# Capped at 5 — the number of distinct product/location combos available
+# under the current entity model (4 raw materials + 1 finished good, each at
+# a single natural location). This is a real ceiling, not a target we chose:
+# getting quantity_mismatch above 5 would require adding more product/
+# location combos to the Odoo entity set itself, out of scope for this fix.
+QUANTITY_MISMATCH_COUNT = 5
+
+# duplicate_entry anomalies are now a dedicated guaranteed-count pass (see
+# generate.py's inject_duplicate_entries), exactly like quantity_mismatch
+# above, instead of being one arm of a per-order random.choice — the random
+# 3-way split was the root cause of the Day 2 gap (0 duplicate_entry
+# examples from only 3 independent 1-in-3 draws). Capped at however many
+# real, non-anomalous purchase orders the run actually produced.
+DUPLICATE_ENTRY_COUNT = 10
 
 # --- Output paths ---
 GROUND_TRUTH_PATH = "output/ground_truth.json"

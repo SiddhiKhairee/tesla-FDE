@@ -323,6 +323,13 @@ def run(client, entities, schedule: pd.DataFrame, limit: int | None, dry_run: bo
     created_count = 0
     failed_count = 0
     skipped_count = 0
+    # Real, already-validated, non-anomalous POs — candidate pool for the
+    # guaranteed-count duplicate_entry pass at the end of the run (see
+    # inject_duplicate_entries). duplicate_entry is deliberately NOT one arm
+    # of the per-order random anomaly choice below anymore — that's what let
+    # a full regeneration produce zero of them by chance (see config.py's
+    # DUPLICATE_ENTRY_COUNT comment).
+    duplicate_candidates = []
 
     raw_material_keys = ["cell", "bms", "enclosure", "bracket"]
 
@@ -345,39 +352,36 @@ def run(client, entities, schedule: pd.DataFrame, limit: int | None, dry_run: bo
                 po_id, po_name, pickings = create_purchase_order(client, entities, product_key, qty, order_date)
 
                 if anomalous and pickings:
-                    anomaly_type = random.choice(["stuck", "delayed", "duplicate"])
+                    # duplicate_entry removed from this random split — it's
+                    # now a dedicated guaranteed-count pass (see
+                    # inject_duplicate_entries) so it can't come up zero by
+                    # chance the way it did with a 3-way choice.
+                    anomaly_type = random.choice(["stuck", "delayed"])
                     if anomaly_type == "stuck":
                         ground_truth.append(
                             inject_stuck_order(client, "stock.picking", pickings[0], po_name, "done", order_date)
                         )
-                    elif anomaly_type == "delayed":
+                    else:  # delayed
                         # date_done gets fully overwritten by inject_delayed_delivery
                         # below, so the exact effective_date here doesn't matter.
                         validate_picking(client, pickings[0], effective_date=order_date)
                         ground_truth.append(
                             inject_delayed_delivery(client, pickings[0], po_name, order_date, order_date)
                         )
-                    else:  # duplicate
-                        receipt_date = order_date + timedelta(days=random.randint(1, 4))
-                        validate_picking(client, pickings[0], effective_date=receipt_date)
-                        supplier_key = config.PRODUCT_SUPPLIER[product_key]
-                        dup_vals = {
-                            "partner_id": entities["suppliers"][supplier_key],
-                            "date_order": order_date.strftime("%Y-%m-%d %H:%M:%S"),
-                            "order_line": [
-                                (0, 0, {
-                                    "product_id": entities["products"][product_key],
-                                    "product_qty": qty,
-                                    "date_planned": order_date.strftime("%Y-%m-%d %H:%M:%S"),
-                                })
-                            ],
-                        }
-                        _, event = inject_duplicate_entry(client, "purchase.order", dup_vals, po_name, order_date)
-                        ground_truth.append(event)
                 else:
                     if pickings:
                         receipt_date = order_date + timedelta(days=random.randint(1, 4))
                         validate_picking(client, pickings[0], effective_date=receipt_date)
+                        # Eligible for the guaranteed duplicate_entry pass
+                        # below — real, validated, not already anomalous.
+                        duplicate_candidates.append(
+                            {
+                                "po_name": po_name,
+                                "product_key": product_key,
+                                "qty": qty,
+                                "order_date": order_date,
+                            }
+                        )
 
                 created_count += 1
             except Exception as e:  # noqa: BLE001 — log and keep going, first live run will surface real issues
@@ -456,7 +460,43 @@ def run(client, entities, schedule: pd.DataFrame, limit: int | None, dry_run: bo
                 print(f"[FAILED] SO {customer_name} PW3-ASSY x{qty} on {order_date.date()}: {e}")
                 failed_count += 1
 
-    return ground_truth, created_count, failed_count, skipped_count
+    return ground_truth, created_count, failed_count, skipped_count, duplicate_candidates
+
+
+def inject_duplicate_entries(client, entities, candidates, count):
+    """Inject duplicate_entry anomalies as a separate, guaranteed-count pass
+    over already-created, non-anomalous purchase orders — same pattern as
+    inject_quantity_mismatches below, and for the same reason: leaving this
+    to a per-order random draw is what let a full regeneration produce zero
+    duplicate_entry examples by chance (see config.DUPLICATE_ENTRY_COUNT).
+
+    count is capped at len(candidates) — if a run genuinely didn't produce
+    enough real non-anomalous POs to duplicate, that's reported, not padded.
+    """
+    if count > len(candidates):
+        print(f"[WARN] duplicate_entry count {count} exceeds {len(candidates)} "
+              f"non-anomalous PO candidates available — capping.")
+        count = len(candidates)
+
+    chosen = random.sample(candidates, count)
+    events = []
+    for c in chosen:
+        supplier_key = config.PRODUCT_SUPPLIER[c["product_key"]]
+        dup_vals = {
+            "partner_id": entities["suppliers"][supplier_key],
+            "date_order": c["order_date"].strftime("%Y-%m-%d %H:%M:%S"),
+            "order_line": [
+                (0, 0, {
+                    "product_id": entities["products"][c["product_key"]],
+                    "product_qty": c["qty"],
+                    "date_planned": c["order_date"].strftime("%Y-%m-%d %H:%M:%S"),
+                })
+            ],
+        }
+        _, event = inject_duplicate_entry(client, "purchase.order", dup_vals, c["po_name"], c["order_date"])
+        events.append(event)
+        print(f"  duplicate_entry: {event.entity_id} duplicated as {event.duplicate_of}")
+    return events
 
 
 def inject_quantity_mismatches(client, entities, end_date, count):
@@ -515,7 +555,9 @@ def main():
         entities = resolve_entities(client)
         print("All entities resolved.")
 
-    ground_truth, created, failed, skipped = run(client, entities, schedule, args.limit, args.dry_run)
+    ground_truth, created, failed, skipped, duplicate_candidates = run(
+        client, entities, schedule, args.limit, args.dry_run
+    )
 
     if not args.dry_run:
         end_date = schedule["date"].max().to_pydatetime()
@@ -523,6 +565,12 @@ def main():
               f"at end of window ({end_date.date()})...")
         ground_truth.extend(
             inject_quantity_mismatches(client, entities, end_date, config.QUANTITY_MISMATCH_COUNT)
+        )
+
+        print(f"\nInjecting {config.DUPLICATE_ENTRY_COUNT} duplicate_entry anomalies "
+              f"({len(duplicate_candidates)} non-anomalous PO candidates available)...")
+        ground_truth.extend(
+            inject_duplicate_entries(client, entities, duplicate_candidates, config.DUPLICATE_ENTRY_COUNT)
         )
 
     print(f"\nDone. Created: {created}, Failed: {failed}, Skipped (dependency not met): {skipped}, "

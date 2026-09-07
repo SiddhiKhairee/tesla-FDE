@@ -51,6 +51,14 @@ Priority key: **P0** = must-do · **P1** = important · **P2** = stretch, only i
 
 **Depends on:** the Odoo API connection from Day 1. If that's shaky, fix it before writing the generator.
 
+> **2026-09-07 — caught and fixed during final QA:** ground truth had regressed to 13 total
+> events with **zero `duplicate_entry` examples** after an interim full Odoo reseed, too
+> small a sample for a meaningful eval. Regenerated to 56 events (8/13/0/4 → 28/13/10/5 per
+> type) with a guaranteed-minimum-per-type mechanism so this can't silently happen again.
+> Also caught and fixed along the way: a `detection.py` duplicate-order tiebreak bug and
+> self-inflicted Odoo data contamination from an interrupted regeneration run. Full story,
+> including old-vs-new eval numbers: `data-gen/GROUND_TRUTH_NOTES.md`.
+
 ---
 
 ## Day 3 — Core Diagnosis Engine

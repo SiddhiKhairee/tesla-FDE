@@ -72,6 +72,32 @@ def test_detect_duplicate_orders_flags_matching_pair():
     assert {events[0].entity_id, events[0].duplicate_of} == {"P00010", "P00011"}
 
 
+def test_detect_duplicate_orders_same_date_order_ties_by_lower_id():
+    """A real duplicate_entry injection gives the copy the exact same
+    date_order as the original (see data-gen/anomalies.py's
+    inject_duplicate_entry) — the sort must have a deterministic tiebreak
+    for that case, or which record ends up "entity_id" (the original) vs
+    "duplicate_of" isn't stable, and eval.py's exact-key match will score a
+    correctly-found pair as a false positive + false negative instead of a
+    true positive. The lower id is always the true original (created
+    first), so it must win entity_id regardless of input list order.
+    """
+    orders = [
+        {"id": 50, "name": "P00050", "date_order": "2026-01-01 00:00:00", "partner_id": [5, "Acme"]},
+        {"id": 12, "name": "P00012", "date_order": "2026-01-01 00:00:00", "partner_id": [5, "Acme"]},
+    ]
+    order_lines = [
+        {"order_id": [50, "P00050"], "product_id": [100, "SKU-1"], "product_qty": 10.0},
+        {"order_id": [12, "P00012"], "product_id": [100, "SKU-1"], "product_qty": 10.0},
+    ]
+
+    events = detect_duplicate_orders(orders, order_lines, qty_field="product_qty")
+
+    assert len(events) == 1
+    assert events[0].entity_id == "P00012"
+    assert events[0].duplicate_of == "P00050"
+
+
 def test_detect_duplicate_orders_ignores_different_products():
     orders = [
         {"id": 1, "name": "P00010", "date_order": "2026-01-01 00:00:00", "partner_id": [5, "Acme"]},
