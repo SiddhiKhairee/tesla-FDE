@@ -42,6 +42,12 @@ _allowed_origins = [
     for origin in os.environ.get("ALLOWED_ORIGIN", "*").split(",")
     if origin.strip()
 ]
+# TEMPORARY DEBUG — remove once the Render CORS issue is confirmed fixed.
+# repr() on purpose: reveals stray quotes/whitespace/newlines a dashboard
+# paste can introduce, which `in`/`==` checks in Access-Control-Allow-Origin
+# matching would otherwise silently fail on.
+print(f"DEBUG startup: raw ALLOWED_ORIGIN env = {os.environ.get('ALLOWED_ORIGIN')!r}")
+print(f"DEBUG startup: parsed CORS allow_origins = {_allowed_origins!r}")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
