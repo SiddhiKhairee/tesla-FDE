@@ -31,9 +31,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from gather_context_sensor import gather_sensor_context  # noqa: E402
-from ml_detector import load_dataset, split_dataset  # noqa: E402
-from sensor_adapter import DEFAULT_K_PER_COLUMN, compute_baselines, load_ml_gate, process_row  # noqa: E402
+from gather_context_sensor import gather_sensor_context
+from ml_detector import load_dataset, split_dataset
+from sensor_adapter import (
+    DEFAULT_K_PER_COLUMN,
+    compute_baselines,
+    load_ml_gate,
+    process_row,
+)
 
 RESULTS_PATH = Path(__file__).resolve().parent.parent / "data-gen" / "sensor" / "sensor_detection_eval.json"
 FAILURE_TYPE_COLUMNS = ["TWF", "HDF", "PWF", "OSF", "RNF"]
@@ -80,7 +85,11 @@ def probe_and_select_llm():
     provider_name, probe_log) — probe_log records what was tried and what
     happened, including the rejected attempt, not just the winner.
     """
-    from llm_client import GeminiDiagnosisLLM, GroqDiagnosisLLM, GeminiGroqStubFallbackLLM
+    from llm_client import (
+        GeminiDiagnosisLLM,
+        GeminiGroqStubFallbackLLM,
+        GroqDiagnosisLLM,
+    )
 
     event, context = _probe_event_and_context()
     probe_log = []

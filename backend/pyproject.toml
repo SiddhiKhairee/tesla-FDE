@@ -1,0 +1,12 @@
+[tool.ruff.lint]
+# DTZ (flake8-datetimez) flags every naive datetime.now()/datetime.strptime()
+# call as missing a tz argument. detection.py, diagnosis.py, ticket_store.py,
+# and sensor_adapter.py all use naive datetimes deliberately and consistently
+# (matching Odoo's own naive timestamps and ground_truth.json's naive
+# reference_date, e.g. eval.py's reproducible reference-date comparisons in
+# detect_stuck_orders) — introducing tz-aware datetimes in only some of these
+# call sites would risk naive/aware comparison TypeErrors or silent
+# behavioral drift in code the ERP eval's verified 98.2%/100% precision/
+# recall numbers depend on. Ignored here as a known, deliberate simplification
+# rather than fixed piecemeal — see README.md's Known Limitations section.
+ignore = ["DTZ"]

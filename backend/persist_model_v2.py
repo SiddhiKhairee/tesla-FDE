@@ -57,7 +57,7 @@ def _confusion_matrix(y_true, y_pred) -> dict:
 
 def main() -> None:
     df = load_dataset()
-    df_train, df_val, df_test, y_train, y_val, y_test = split_dataset(df)
+    df_train, _df_val, df_test, y_train, _y_val, y_test = split_dataset(df)
     X_train = df_train[ALL_SENSOR_COLUMNS]
     X_test = df_test[ALL_SENSOR_COLUMNS]
 

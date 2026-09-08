@@ -27,7 +27,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import average_precision_score, precision_recall_curve
+from sklearn.metrics import average_precision_score
 from sklearn.model_selection import train_test_split
 
 from sensor_adapter import ALL_SENSOR_COLUMNS, add_derived_features_df

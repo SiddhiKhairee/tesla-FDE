@@ -36,12 +36,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from eval_diagnosis_sensor import probe_and_select_llm  # noqa: E402
-from gather_context_sensor import gather_sensor_context  # noqa: E402
-from llm_client import DiagnosisReport  # noqa: E402
-from ml_detector import load_dataset  # noqa: E402
-from notifications import _format_sensor_message, notify_sensor_alert  # noqa: E402
-from sensor_adapter import DEFAULT_K_PER_COLUMN, compute_baselines, load_ml_gate, process_row  # noqa: E402
+from eval_diagnosis_sensor import probe_and_select_llm
+from gather_context_sensor import gather_sensor_context
+from llm_client import DiagnosisReport
+from ml_detector import load_dataset
+from notifications import _format_sensor_message, notify_sensor_alert
+from sensor_adapter import (
+    DEFAULT_K_PER_COLUMN,
+    compute_baselines,
+    load_ml_gate,
+    process_row,
+)
 
 FAILURE_TYPE_COLUMNS = ["TWF", "HDF", "PWF", "OSF", "RNF"]
 DEMO_SEED = 7
@@ -135,7 +140,7 @@ def run_demo(live: bool, send_slack: bool, limit: int | None) -> None:
         real_types = [c for c in FAILURE_TYPE_COLUMNS if row[c] == 1]
         print(
             f"{result['entity_id']:<12}{row['Machine failure']:>16}{(','.join(real_types) or '-'):>16}"
-            f"{result['ml_probability']:>16.3f}{str(result['flagged']):>10}"
+            f"{result['ml_probability']:>16.3f}{result['flagged']!s:>10}"
         )
         if result["flagged"]:
             flagged.append((row, result))

@@ -34,7 +34,12 @@ Usage (from backend/, with the venv active):
 """
 from gather_context_sensor import gather_sensor_context
 from ml_detector import load_dataset, split_dataset
-from sensor_adapter import DEFAULT_K_PER_COLUMN, compute_baselines, load_ml_gate, process_row
+from sensor_adapter import (
+    DEFAULT_K_PER_COLUMN,
+    compute_baselines,
+    load_ml_gate,
+    process_row,
+)
 
 # Reuses the same test split ml_detector.py/persist_model_v2.py already
 # evaluated against — "the same rows used in earlier eval work" per the
@@ -143,7 +148,7 @@ def main() -> None:
         "obvious": "OBVIOUS (single clean signal, easiest case)",
     }
 
-    print(f"\nCategorized spot-check — no LLM/diagnosis-agent call made.")
+    print("\nCategorized spot-check — no LLM/diagnosis-agent call made.")
     for category, requested_n in CATEGORY_COUNTS.items():
         rows = picks[category]
         print(f"\n{'#' * 70}\n# {labels[category]} — showing {len(rows)}/{requested_n}\n{'#' * 70}")
