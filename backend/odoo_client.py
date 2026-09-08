@@ -12,6 +12,17 @@ load_dotenv()
 
 class OdooClient:
     def __init__(self):
+        missing = [
+            name
+            for name in ("ODOO_URL", "ODOO_DB", "ODOO_USERNAME", "ODOO_API_KEY")
+            if not os.environ.get(name)
+        ]
+        if missing:
+            raise RuntimeError(
+                f"Odoo not configured — missing {', '.join(missing)}. "
+                "Set these in .env to use ERP-backed endpoints (/debug/*, /pipeline/run)."
+            )
+
         self.url = os.environ["ODOO_URL"]
         self.db = os.environ["ODOO_DB"]
         self.username = os.environ["ODOO_USERNAME"]

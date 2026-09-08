@@ -49,8 +49,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-odoo = OdooClient()
 _HISTORICAL_INCIDENTS = load_incidents()
+
+# Lazy singleton: constructing OdooClient() dials Odoo immediately (see
+# odoo_client.py), so building it at import time crashes app startup
+# wherever Odoo isn't reachable/configured (e.g. the Odoo-free demo deploy —
+# see ALLOWED_ORIGIN above). Only the ERP-backed endpoints below
+# (/debug/*, /pipeline/run) ever call this; /reports/intake and /tickets
+# never do.
+_odoo: OdooClient | None = None
+
+
+def _get_odoo() -> OdooClient:
+    global _odoo
+    if _odoo is None:
+        _odoo = OdooClient()
+    return _odoo
 
 
 @app.get("/health")
@@ -60,38 +74,39 @@ def health():
 
 @app.get("/debug/purchase-orders")
 def debug_purchase_orders(limit: int = 20):
-    return fetch_purchase_orders(odoo, limit=limit)
+    return fetch_purchase_orders(_get_odoo(), limit=limit)
 
 
 @app.get("/debug/receipts")
 def debug_receipts(limit: int = 20):
-    return fetch_incoming_receipts(odoo, limit=limit)
+    return fetch_incoming_receipts(_get_odoo(), limit=limit)
 
 
 @app.get("/debug/manufacturing-orders")
 def debug_manufacturing_orders(limit: int = 20):
-    return fetch_manufacturing_orders(odoo, limit=limit)
+    return fetch_manufacturing_orders(_get_odoo(), limit=limit)
 
 
 @app.get("/debug/sales-orders")
 def debug_sales_orders(limit: int = 20):
-    return fetch_sales_orders(odoo, limit=limit)
+    return fetch_sales_orders(_get_odoo(), limit=limit)
 
 
 @app.get("/debug/deliveries")
 def debug_deliveries(limit: int = 20):
-    return fetch_outgoing_deliveries(odoo, limit=limit)
+    return fetch_outgoing_deliveries(_get_odoo(), limit=limit)
 
 
 @app.get("/debug/quants")
 def debug_quants(limit: int = 20):
-    return fetch_stock_quants(odoo, limit=limit)
+    return fetch_stock_quants(_get_odoo(), limit=limit)
 
 
 def _fetch_snapshot() -> dict:
     """One fetch of everything detection and diagnosis need, so endpoints
     that need both don't hit Odoo twice for the same data.
     """
+    odoo = _get_odoo()
     return {
         "pickings": fetch_incoming_receipts(odoo) + fetch_outgoing_deliveries(odoo),
         "purchase_orders": fetch_purchase_orders(odoo),
