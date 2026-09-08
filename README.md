@@ -316,7 +316,7 @@ Stated here directly, not scattered across files or left for someone else to dis
 ## Screenshots
 
 <!-- TODO: paste screenshot here -->
-![Dashboard ticket list](./screenshots/dashboard.png)
+![Dashboard ticket list](screenshots/dashboard.png)
 
 <!-- TODO: paste screenshot here -->
 ![Expanded ticket diagnosis reasoning](./screenshots/ticket-detail.png)
