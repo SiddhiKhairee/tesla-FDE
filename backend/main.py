@@ -1,6 +1,8 @@
+import os
 from datetime import datetime
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from detection import (
     detect_delayed_deliveries,
@@ -31,6 +33,21 @@ from schemas import FailureReportIn
 from ticket_store import list_tickets, save_ticket
 
 app = FastAPI(title="Tesla FDE ERP Reconciliation Agent")
+
+# ALLOWED_ORIGIN: comma-separated list of frontend origins allowed to call
+# this API (e.g. the deployed dashboard's URL). Unset locally/in CI falls
+# back to "*" since there's no browser-facing deploy to restrict yet.
+_allowed_origins = [
+    origin.strip()
+    for origin in os.environ.get("ALLOWED_ORIGIN", "*").split(",")
+    if origin.strip()
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_allowed_origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 odoo = OdooClient()
 _HISTORICAL_INCIDENTS = load_incidents()

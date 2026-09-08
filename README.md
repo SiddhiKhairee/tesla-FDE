@@ -95,7 +95,7 @@ Copy each example file and fill in real values — **never commit the filled-in 
 
 | File to copy | Used by | Keys |
 |---|---|---|
-| `backend/.env.example` → `backend/.env` | Backend (Odoo API, LLM providers, Slack) | `ODOO_URL`, `ODOO_DB`, `ODOO_USERNAME`, `ODOO_API_KEY`, `GEMINI_API_KEY`, `GROQ_API_KEY`, `SLACK_WEBHOOK_URL` |
+| `backend/.env.example` → `backend/.env` | Backend (Odoo API, LLM providers, Slack, CORS) | `ODOO_URL`, `ODOO_DB`, `ODOO_USERNAME`, `ODOO_API_KEY`, `GEMINI_API_KEY`, `GROQ_API_KEY`, `SLACK_WEBHOOK_URL`, `ALLOWED_ORIGIN` |
 | `data-gen/.env.example` → `data-gen/.env` | Synthetic data generator (same Odoo instance as backend) | `ODOO_URL`, `ODOO_DB`, `ODOO_USERNAME`, `ODOO_API_KEY` |
 | `frontend/.env.local.example` → `frontend/.env.local` | Frontend dev server only (not needed for the Docker build) | `VITE_BACKEND_PORT` |
 
@@ -103,6 +103,9 @@ Copy each example file and fill in real values — **never commit the filled-in 
 through Groq → Gemini → a deterministic stub LLM depending on which keys are present and
 which provider is actually answering at call time (see `backend/llm_client.py`). With no
 keys at all, the pipeline still runs end-to-end on the stub, just without real reasoning.
+
+`ALLOWED_ORIGIN` is optional too — comma-separated frontend origin(s) allowed to call the API
+(e.g. a deployed dashboard's URL). Unset locally/in CI, it defaults to `*`.
 
 > **Note on `backend/.env.example`:** at the time of writing this file doesn't yet exist in
 > the repo (only `backend/.env`, gitignored, does) — create it from the key list above before

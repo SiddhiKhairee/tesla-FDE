@@ -13,11 +13,18 @@ from pathlib import Path
 from threading import Lock
 
 TICKETS_PATH = Path(__file__).parent / "data" / "tickets.json"
+# backend/data/tickets.json is gitignored runtime state (see .gitignore),
+# excluded from the Docker image on purpose. A deployed container therefore
+# starts with no tickets.json at all, so we fall back to this committed
+# snapshot of already-verified demo tickets instead of an empty dashboard.
+SEED_PATH = Path(__file__).parent / "data" / "tickets.seed.json"
 _LOCK = Lock()
 
 
 def _read_all(path: Path) -> list[dict]:
     if not path.exists():
+        if path == TICKETS_PATH and SEED_PATH.exists():
+            return json.loads(SEED_PATH.read_text())
         return []
     return json.loads(path.read_text())
 
