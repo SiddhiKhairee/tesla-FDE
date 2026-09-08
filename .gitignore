@@ -220,3 +220,8 @@ __marimo__/
 # Runtime ticket store (see backend/ticket_store.py) — local persisted
 # state, not source, same reasoning as db.sqlite3 above.
 backend/data/tickets.json
+
+# Private strategy context and dev-process scratch files — not for the
+# public portfolio repo. Untracked but kept locally.
+CLAUDE.md
+final_spot.check.md
