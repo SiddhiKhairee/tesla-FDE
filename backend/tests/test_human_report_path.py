@@ -3,11 +3,32 @@ Tests for Version B's human-report path: the intake adapter, the
 historical-incident similarity match, and the diagnosis engine wired
 together with the free stub LLM (no network calls, no API key needed —
 see llm_client.StubDiagnosisLLM).
+
+The stub is forced explicitly (see the autouse `_force_stub_llm` fixture
+below) rather than relied on implicitly via GEMINI_API_KEY/GROQ_API_KEY
+being absent from the environment. Real keys usually aren't set in this
+shell, but odoo_client.py calls load_dotenv() at import time, and
+test_detection.py (collected alphabetically before this file) transitively
+imports it — so in a full-suite run, real keys can already be sitting in
+os.environ by the time these tests execute, regardless of this file's own
+imports. Without forcing the stub, diagnose_event would silently make
+real, non-deterministic LLM calls instead, and assertions written for the
+stub's fixed output (e.g. confidence == "low") would flake depending on
+what a real provider happens to answer and which provider is primary.
 """
+import pytest
+
+import diagnosis
 from diagnosis import diagnose_event
 from historical_incidents import find_similar_incidents
 from human_report import report_to_event
+from llm_client import StubDiagnosisLLM
 from schemas import FailureReportIn
+
+
+@pytest.fixture(autouse=True)
+def _force_stub_llm(monkeypatch):
+    monkeypatch.setattr(diagnosis, "get_diagnosis_llm", lambda: StubDiagnosisLLM())
 
 
 def _incidents():

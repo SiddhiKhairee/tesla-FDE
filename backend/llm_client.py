@@ -384,13 +384,64 @@ class GeminiGroqStubFallbackLLM(DiagnosisLLM):
             return self._stub.generate(event, context)
 
 
+class GroqGeminiStubFallbackLLM(DiagnosisLLM):
+    """Wraps GroqDiagnosisLLM -> GeminiDiagnosisLLM -> StubDiagnosisLLM. Groq
+    is now the primary provider for the ERP/Version B diagnosis path (see
+    get_diagnosis_llm) — Gemini stays in the chain as a real fallback tier,
+    not dropped, same two providers as GeminiGroqStubFallbackLLM above with
+    the try order reversed.
+
+    Unlike that narrower, quota-only chain, this one treats ANY failure
+    from the primary/secondary provider as fall-through-worthy — a 503
+    overload, a network error, a malformed response, not just a 429. This
+    is the same philosophy as eval_diagnosis_sensor.py's
+    probe_and_select_llm: a genuine failure of any kind means "this
+    provider isn't answering right now," and the caller is better served by
+    the next tier (down to the deterministic stub) than by a 500. This
+    closes a real gap the narrower chain had — a reproduced Gemini 503
+    propagated unhandled into a 500 because only the 429 RESOURCE_EXHAUSTED
+    case was ever caught.
+    """
+
+    def __init__(self):
+        self._groq = GroqDiagnosisLLM()
+        self._gemini = GeminiDiagnosisLLM()
+        self._stub = StubDiagnosisLLM()
+
+    def generate(self, event: dict, context: dict) -> DiagnosisReport:
+        try:
+            return self._groq.generate(event, context)
+        except Exception as e:  # noqa: BLE001 — any real failure falls through, not just quota
+            logger.warning(
+                "Groq failed (%s) for event %s — falling back to Gemini for this request: %s",
+                type(e).__name__,
+                event.get("entity_id"),
+                e,
+            )
+
+        try:
+            return self._gemini.generate(event, context)
+        except Exception as e:  # noqa: BLE001
+            logger.warning(
+                "Gemini failed (%s) for event %s — falling back to StubDiagnosisLLM for this request: %s",
+                type(e).__name__,
+                event.get("entity_id"),
+                e,
+            )
+            return self._stub.generate(event, context)
+
+
 def get_diagnosis_llm() -> DiagnosisLLM:
-    """Gemini first (the chosen free-tier provider, wrapped with a
-    quota-only fallback chain through Groq then the stub — see
-    GeminiGroqStubFallbackLLM), then Anthropic if somehow configured
+    """Groq first — the primary provider for this path since the Groq-
+    primary switch, wrapped with a fallback chain through Gemini then the
+    stub (see GroqGeminiStubFallbackLLM) that catches any real failure, not
+    just quota errors. Falls back to the older Gemini-primary chain if only
+    a Gemini key is configured, then Anthropic if somehow configured
     instead, otherwise the free stub. This is the one place that needs to
     change when the provider changes again.
     """
+    if os.environ.get("GROQ_API_KEY"):
+        return GroqGeminiStubFallbackLLM()
     if os.environ.get("GEMINI_API_KEY"):
         return GeminiGroqStubFallbackLLM()
     if os.environ.get("ANTHROPIC_API_KEY"):

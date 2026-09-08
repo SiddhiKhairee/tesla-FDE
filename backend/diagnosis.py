@@ -17,6 +17,7 @@ Two-node graph, run once per event:
       a structured DiagnosisReport (client.messages.parse, no free-text
       parsing needed downstream).
 """
+import time
 from datetime import datetime
 from typing import Any, TypedDict
 
@@ -24,6 +25,18 @@ from langgraph.graph import END, START, StateGraph
 
 from llm_client import DiagnosisReport, get_diagnosis_llm
 from schemas import DiscrepancyEvent
+
+# Pacing between diagnose_all()'s sequential per-event LLM calls, sized
+# against Groq's free-tier limits (8,000 TPM / 30 RPM) now that Groq is
+# the primary provider for this path (see get_diagnosis_llm). A real call
+# on this ERP/human-report path measured ~1,580 total tokens (811 prompt +
+# 769 completion) — at 4 calls/minute that's ~6,320 TPM, ~79% of the TPM
+# ceiling, well clear of the 30 RPM limit too. 15s between calls keeps to
+# just under 4/minute. Ground truth is currently 56 events, so a real
+# /pipeline/run batch is large enough to plausibly hit the TPM ceiling
+# without this — the same failure mode already seen once in the sensor
+# path's eval batch (see eval_diagnosis_sensor.py's SECONDS_BETWEEN_CALLS).
+SECONDS_BETWEEN_DIAGNOSES = 15.0
 
 
 class DiagnosisState(TypedDict):
@@ -231,4 +244,9 @@ def diagnose_all(
     context.
     """
     reference_date = reference_date or datetime.now()
-    return [diagnose_event(event, events, reference_date, order_index) for event in events]
+    results = []
+    for i, event in enumerate(events):
+        if i > 0:
+            time.sleep(SECONDS_BETWEEN_DIAGNOSES)
+        results.append(diagnose_event(event, events, reference_date, order_index))
+    return results
