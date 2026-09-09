@@ -15,7 +15,7 @@ import pytest
 from groq import APIConnectionError as GroqAPIConnectionError
 from groq import RateLimitError as GroqRateLimitError
 
-from llm_client import DiagnosisReport, GroqGeminiStubFallbackLLM
+from llm_client import DiagnosisReport, GeminiDiagnosisLLM, GroqGeminiStubFallbackLLM
 
 
 def _fake_httpx_request() -> httpx.Request:
@@ -71,11 +71,15 @@ def test_returns_groq_report_when_call_succeeds(wrapper, monkeypatch):
 
 
 def test_groq_rate_limit_falls_back_to_gemini(wrapper, monkeypatch):
+    """wrapper._gemini is lazily constructed (see llm_client.py) — it's
+    still None at fixture-build time, so the fallback tier must be patched
+    on the class, not the not-yet-existing instance."""
+
     def raise_rate_limit(event, context):
         raise _groq_rate_limit_error()
 
     monkeypatch.setattr(wrapper._groq, "generate", raise_rate_limit)
-    monkeypatch.setattr(wrapper._gemini, "generate", lambda event, context: _fake_report("gemini"))
+    monkeypatch.setattr(GeminiDiagnosisLLM, "generate", lambda self, event, context: _fake_report("gemini"))
 
     report = wrapper.generate({"entity_id": "P00001", "anomaly_type": "stuck_order"}, {})
 
@@ -91,7 +95,7 @@ def test_groq_non_quota_failure_also_falls_back_to_gemini(wrapper, monkeypatch):
         raise _groq_connection_error()
 
     monkeypatch.setattr(wrapper._groq, "generate", raise_connection_error)
-    monkeypatch.setattr(wrapper._gemini, "generate", lambda event, context: _fake_report("gemini"))
+    monkeypatch.setattr(GeminiDiagnosisLLM, "generate", lambda self, event, context: _fake_report("gemini"))
 
     report = wrapper.generate({"entity_id": "P00001", "anomaly_type": "stuck_order"}, {})
 
@@ -102,12 +106,31 @@ def test_groq_and_gemini_both_failing_falls_back_to_stub(wrapper, monkeypatch):
     def raise_groq_error(event, context):
         raise _groq_connection_error()
 
-    def raise_gemini_error(event, context):
+    def raise_gemini_error(self, event, context):
         raise _gemini_server_error()
 
     monkeypatch.setattr(wrapper._groq, "generate", raise_groq_error)
-    monkeypatch.setattr(wrapper._gemini, "generate", raise_gemini_error)
+    monkeypatch.setattr(GeminiDiagnosisLLM, "generate", raise_gemini_error)
 
     report = wrapper.generate({"entity_id": "P00001", "anomaly_type": "stuck_order"}, {})
 
     assert report.llm_used == "stub"
+
+
+def test_groq_fails_and_gemini_key_unset_skips_straight_to_stub(monkeypatch):
+    """Reproduces the actual production bug: GROQ_API_KEY set, GEMINI_API_KEY
+    entirely unset. Groq failing must fall through to the stub without ever
+    constructing GeminiDiagnosisLLM (which would KeyError on the missing key)."""
+    monkeypatch.setenv("GROQ_API_KEY", "fake-key-for-test")
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    instance = GroqGeminiStubFallbackLLM()
+
+    def raise_groq_error(event, context):
+        raise _groq_connection_error()
+
+    monkeypatch.setattr(instance._groq, "generate", raise_groq_error)
+
+    report = instance.generate({"entity_id": "P00001", "anomaly_type": "stuck_order"}, {})
+
+    assert report.llm_used == "stub"
+    assert instance._gemini is None

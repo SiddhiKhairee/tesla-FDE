@@ -10,7 +10,7 @@ import pytest
 from google.genai import errors as genai_errors
 from groq import RateLimitError as GroqRateLimitError
 
-from llm_client import DiagnosisReport, GeminiGroqStubFallbackLLM
+from llm_client import DiagnosisReport, GeminiGroqStubFallbackLLM, GroqDiagnosisLLM
 
 
 class _FakeResponse:
@@ -86,11 +86,15 @@ def test_returns_gemini_report_when_call_succeeds(wrapper, monkeypatch):
 
 
 def test_gemini_quota_exhausted_falls_back_to_groq(wrapper, monkeypatch):
+    """wrapper._groq is lazily constructed (see llm_client.py) — it's still
+    None at fixture-build time, so the fallback tier must be patched on the
+    class, not the not-yet-existing instance."""
+
     def raise_quota_error(event, context):
         raise _gemini_quota_error()
 
     monkeypatch.setattr(wrapper._gemini, "generate", raise_quota_error)
-    monkeypatch.setattr(wrapper._groq, "generate", lambda event, context: _fake_report("groq"))
+    monkeypatch.setattr(GroqDiagnosisLLM, "generate", lambda self, event, context: _fake_report("groq"))
 
     report = wrapper.generate({"entity_id": "P00001", "anomaly_type": "stuck_order"}, {})
 
@@ -101,15 +105,35 @@ def test_gemini_and_groq_quota_exhausted_falls_back_to_stub(wrapper, monkeypatch
     def raise_gemini_quota_error(event, context):
         raise _gemini_quota_error()
 
-    def raise_groq_rate_limit_error(event, context):
+    def raise_groq_rate_limit_error(self, event, context):
         raise _groq_rate_limit_error()
 
     monkeypatch.setattr(wrapper._gemini, "generate", raise_gemini_quota_error)
-    monkeypatch.setattr(wrapper._groq, "generate", raise_groq_rate_limit_error)
+    monkeypatch.setattr(GroqDiagnosisLLM, "generate", raise_groq_rate_limit_error)
 
     report = wrapper.generate({"entity_id": "P00001", "anomaly_type": "stuck_order"}, {})
 
     assert report.llm_used == "stub"
+
+
+def test_gemini_fails_and_groq_key_unset_skips_straight_to_stub(monkeypatch):
+    """Mirror of the production bug fixed on the Groq-primary chain: here,
+    GEMINI_API_KEY set, GROQ_API_KEY entirely unset. Gemini quota-exhausting
+    must fall through to the stub without ever constructing
+    GroqDiagnosisLLM (which would KeyError on the missing key)."""
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-key-for-test")
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    instance = GeminiGroqStubFallbackLLM()
+
+    def raise_quota_error(event, context):
+        raise _gemini_quota_error()
+
+    monkeypatch.setattr(instance._gemini, "generate", raise_quota_error)
+
+    report = instance.generate({"entity_id": "P00001", "anomaly_type": "stuck_order"}, {})
+
+    assert report.llm_used == "stub"
+    assert instance._groq is None
 
 
 def test_reraises_non_quota_gemini_errors(wrapper, monkeypatch):
@@ -132,7 +156,7 @@ def test_reraises_non_quota_groq_errors(wrapper, monkeypatch):
         raise _groq_auth_error()
 
     monkeypatch.setattr(wrapper._gemini, "generate", raise_gemini_quota_error)
-    monkeypatch.setattr(wrapper._groq, "generate", raise_groq_auth_error)
+    monkeypatch.setattr(GroqDiagnosisLLM, "generate", lambda self, event, context: raise_groq_auth_error(event, context))
 
     with pytest.raises(GroqAuthenticationError):
         wrapper.generate({"entity_id": "P00001", "anomaly_type": "stuck_order"}, {})

@@ -352,9 +352,17 @@ class GeminiGroqStubFallbackLLM(DiagnosisLLM):
     """
 
     def __init__(self):
+        # Gemini is the primary tier here, so get_diagnosis_llm has already
+        # confirmed GEMINI_API_KEY is set before selecting this class —
+        # eager construction is safe. Groq/stub are only reached on
+        # fallback, and GROQ_API_KEY is *not* guaranteed set in this branch
+        # (get_diagnosis_llm only reaches it when GROQ_API_KEY was absent),
+        # so both are constructed lazily, on first actual need — see the
+        # GroqGeminiStubFallbackLLM fix below for why eager construction of
+        # a fallback tier crashes the whole request when its key is unset.
         self._gemini = GeminiDiagnosisLLM()
-        self._groq = GroqDiagnosisLLM()
-        self._stub = StubDiagnosisLLM()
+        self._groq: GroqDiagnosisLLM | None = None
+        self._stub: StubDiagnosisLLM | None = None
 
     def generate(self, event: dict, context: dict) -> DiagnosisReport:
         from google.genai import errors as genai_errors
@@ -372,16 +380,28 @@ class GeminiGroqStubFallbackLLM(DiagnosisLLM):
                 e,
             )
 
-        try:
-            return self._groq.generate(event, context)
-        except GroqRateLimitError as e:
-            logger.warning(
-                "Groq quota exhausted (429) for event %s — falling back to "
-                "StubDiagnosisLLM for this request: %s",
+        if os.environ.get("GROQ_API_KEY"):
+            if self._groq is None:
+                self._groq = GroqDiagnosisLLM()
+            try:
+                return self._groq.generate(event, context)
+            except GroqRateLimitError as e:
+                logger.warning(
+                    "Groq quota exhausted (429) for event %s — falling back to "
+                    "StubDiagnosisLLM for this request: %s",
+                    event.get("entity_id"),
+                    e,
+                )
+        else:
+            logger.info(
+                "GROQ_API_KEY not set — skipping Groq fallback tier for event %s, "
+                "going straight to StubDiagnosisLLM",
                 event.get("entity_id"),
-                e,
             )
-            return self._stub.generate(event, context)
+
+        if self._stub is None:
+            self._stub = StubDiagnosisLLM()
+        return self._stub.generate(event, context)
 
 
 class GroqGeminiStubFallbackLLM(DiagnosisLLM):
@@ -404,9 +424,19 @@ class GroqGeminiStubFallbackLLM(DiagnosisLLM):
     """
 
     def __init__(self):
+        # Groq is the primary tier here, so get_diagnosis_llm has already
+        # confirmed GROQ_API_KEY is set before selecting this class —
+        # eager construction is safe. Gemini/stub are only reached on
+        # fallback, and GEMINI_API_KEY is NOT guaranteed set in this branch
+        # (this is the primary diagnosis path in production, where only
+        # GROQ_API_KEY is configured) — constructing GeminiDiagnosisLLM()
+        # unconditionally here crashed every /reports/intake request with
+        # KeyError: 'GEMINI_API_KEY', since __init__ ran in full before any
+        # actual fallback was needed. Both are now constructed lazily, on
+        # first actual need.
         self._groq = GroqDiagnosisLLM()
-        self._gemini = GeminiDiagnosisLLM()
-        self._stub = StubDiagnosisLLM()
+        self._gemini: GeminiDiagnosisLLM | None = None
+        self._stub: StubDiagnosisLLM | None = None
 
     def generate(self, event: dict, context: dict) -> DiagnosisReport:
         try:
@@ -419,16 +449,28 @@ class GroqGeminiStubFallbackLLM(DiagnosisLLM):
                 e,
             )
 
-        try:
-            return self._gemini.generate(event, context)
-        except Exception as e:  # noqa: BLE001
-            logger.warning(
-                "Gemini failed (%s) for event %s — falling back to StubDiagnosisLLM for this request: %s",
-                type(e).__name__,
+        if os.environ.get("GEMINI_API_KEY"):
+            if self._gemini is None:
+                self._gemini = GeminiDiagnosisLLM()
+            try:
+                return self._gemini.generate(event, context)
+            except Exception as e:  # noqa: BLE001
+                logger.warning(
+                    "Gemini failed (%s) for event %s — falling back to StubDiagnosisLLM for this request: %s",
+                    type(e).__name__,
+                    event.get("entity_id"),
+                    e,
+                )
+        else:
+            logger.info(
+                "GEMINI_API_KEY not set — skipping Gemini fallback tier for event %s, "
+                "going straight to StubDiagnosisLLM",
                 event.get("entity_id"),
-                e,
             )
-            return self._stub.generate(event, context)
+
+        if self._stub is None:
+            self._stub = StubDiagnosisLLM()
+        return self._stub.generate(event, context)
 
 
 def get_diagnosis_llm() -> DiagnosisLLM:
